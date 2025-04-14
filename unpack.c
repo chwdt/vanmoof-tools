@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <endian.h>
+
 #include "pack.h"
 
 static char *progname;
@@ -57,14 +59,14 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	n = lseek(fd, header.offset, SEEK_SET);
-	if (n != header.offset) {
-		fprintf(stderr, "%s: seek(%u): %zd\n", progname, header.offset, n);
+	n = lseek(fd, le32toh(header.offset), SEEK_SET);
+	if (n != le32toh(header.offset)) {
+		fprintf(stderr, "%s: seek(%u): %zd\n", progname, le32toh(header.offset), n);
 		exit(1);
 	}
 
-	offset = header.offset;
-	for (i = 0; i < header.length / sizeof(entry); i++) {
+	offset = le32toh(header.offset);
+	for (i = 0; i < le32toh(header.length) / sizeof(entry); i++) {
 		n = lseek(fd, offset, SEEK_SET);
 		if (n != offset) {
 			fprintf(stderr, "%s: seek(%u): %zd\n", progname, offset, n);
@@ -77,7 +79,7 @@ main(int argc, char **argv)
 			exit(1);
 		}
 
-		printf("entry: %s offset %u, length %u\n", entry.filename, entry.offset, entry.length);
+		printf("entry: %s offset %u, length %u\n", entry.filename, le32toh(entry.offset), le32toh(entry.length));
 
 		out = open(entry.filename, O_WRONLY|O_CREAT|O_TRUNC, 0666);
 		if (out < 0) {
@@ -85,15 +87,15 @@ main(int argc, char **argv)
 			exit(1);
 		}
 
-		n = lseek(fd, entry.offset, SEEK_SET);
-		if (n != entry.offset) {
-			fprintf(stderr, "%s: seek(%u): %zd\n", progname, entry.offset, n);
+		n = lseek(fd, le32toh(entry.offset), SEEK_SET);
+		if (n != le32toh(entry.offset)) {
+			fprintf(stderr, "%s: seek(%u): %zd\n", progname, le32toh(entry.offset), n);
 			exit(1);
 		}
 
 		total = 0;
-		while (total < entry.length) {
-			m = entry.length - total;
+		while (total < le32toh(entry.length)) {
+			m = le32toh(entry.length) - total;
 			if (m > sizeof(buffer))
 				m = sizeof(buffer);
 			n = read(fd, buffer, m);
