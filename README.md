@@ -4,7 +4,7 @@ Tools to support VanMoof S3/X3 reverse engineering efforts
 
 ## unpack
 
-usage: unpack <packfile>
+usage: `unpack <packfile>`
 
 This tool extracts the contents of a VanMoof update file, also known as PACK file. A PACK file starts with a header containing the magic "PACK", an offset to a directory structure and the length of the directory structure. The directory structure (at the end of the file) contains one or more entries containing a filename, an offset, and the length of the data. See pack.h for details of these structures.
 
