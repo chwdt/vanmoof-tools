@@ -24,7 +24,7 @@ The tool will overwrite any file present in the current directory if this is con
 Most components of the bike contain a split boot loader and firmware image, the Bluetooth firmware might differ from this scheme.
 
 The boot loader starts with the typical ARM vector table and is 20Kb (0x5000 bytes) long.
-The firmware image starts with a magic 0x55 0xaa 0x55 0xaa, followed by 8 (yet) unknown bytes, followed by 4 bytes giving the length of the image. One of the unknowns might be a CRC over the image. 
+The firmware image starts with a magic 0x55 0xaa 0x55 0xaa, followed by 4 bytes version info, followed by 4 (yet) unknown bytes (CRC?), followed by 4 bytes giving the length of the image.
 
 ## Fun facts
 
