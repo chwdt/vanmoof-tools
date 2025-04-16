@@ -47,6 +47,16 @@ usage: `crc32 <warefile>`
 
 This tool calculates and verifies the CRC of both boot loader and firmware images.
 
+## Offsets in smart controller internal flash:
+
+0x08000000: stm32 boot loader
+0x08010000: shifterware image
+0x08020000: mainware image
+0x08060000: shadow image
+0x080a0000: motorware image
+0x080c0000: batteryware image
+0x080e0000: bmsboot image
+
 ## Fun facts
 
 The magic numbers used by VanMoof have been used previously by others, this gives some funny output when using the unix `file` command:
