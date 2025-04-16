@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include <endian.h>
 
@@ -24,6 +25,7 @@ main(int argc, char **argv)
 	char buffer[8196];
 	char *packfile;
 	int fd, out;
+	struct stat st;
 	pack_header_t header;
 	pack_entry_t entry;
 	size_t offset;
@@ -48,6 +50,11 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
+	if (fstat(fd, &st) < 0) {
+		fprintf(stderr, "%s: fstat(%s): %s\n", progname, packfile, strerror(errno));
+		exit(1);
+	}
+
 	n = read(fd, &header, sizeof(header));
 	if (n != sizeof(header)) {
 		fprintf(stderr, "%s: read(%zu): %zd\n", progname, sizeof(header), n);
@@ -59,9 +66,9 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	n = lseek(fd, le32toh(header.offset), SEEK_SET);
-	if (n != le32toh(header.offset)) {
-		fprintf(stderr, "%s: seek(%u): %zd\n", progname, le32toh(header.offset), n);
+	if (le32toh(header.offset) + le32toh(header.length) > st.st_size) {
+		fprintf(stderr, "%s: WARNING: PACK offset 0x%08zx + length 0x%08x is beyond end of file 0x%08zx\n",
+			progname, offset, le32toh(header.length), st.st_size);
 		exit(1);
 	}
 
@@ -75,11 +82,18 @@ main(int argc, char **argv)
 
 		n = read(fd, &entry, sizeof(entry));
 		if (n != sizeof(entry)) {
-			fprintf(stderr, "%s: read(%zu): %zd\n", progname, sizeof(header), n);
+			fprintf(stderr, "%s: read(%zu): %zd\n", progname, sizeof(entry), n);
 			exit(1);
 		}
 
-		printf("entry: %s offset %u, length %u\n", entry.filename, le32toh(entry.offset), le32toh(entry.length));
+		if (le32toh(entry.offset) + le32toh(entry.length) > le32toh(header.offset)) {
+			fprintf(stderr, "%s: file %s offset 0x%08zx + length 0x%08x is beyond start of PACK directoy 0x%08zx\n",
+				progname, entry.filename, le32toh(entry.offset), le32toh(entry.length), le32toh(header.offset));
+			exit(1);
+		}
+
+		printf("file: %s, offset 0x%08x, length 0x%08x\n", entry.filename,
+			le32toh(entry.offset), le32toh(entry.length));
 
 		out = open(entry.filename, O_WRONLY|O_CREAT|O_TRUNC, 0666);
 		if (out < 0) {
