@@ -24,7 +24,28 @@ The tool will overwrite any file present in the current directory if this is con
 Most components of the bike contain a split boot loader and firmware image, the Bluetooth firmware might differ from this scheme.
 
 The boot loader starts with the typical ARM vector table and is 20Kb (0x5000 bytes) long.
-The firmware image starts with a magic 0x55 0xaa 0x55 0xaa, followed by 4 bytes version info, followed by 4 (yet) unknown bytes (CRC?), followed by 4 bytes giving the length of the image.
+The last 8 bytes of the boot loader binary contain:
+- 4 bytes version encoded as ASCII characters
+- 4 bytes CRC32.
+
+The CRC is calculated using the STM32 CRC algorithm over the whole boot loader data without the last 4 bytes
+
+The firmware image starts with a magic 0xaa55aa55, followed by these header items:
+- 4 bytes version info
+- 4 bytes CRC32
+- 4 bytes length
+- 12 bytes date in ASCII
+- 12 bytes time in ASCII
+
+All 4 byte values are encoded little endian
+
+The CRC is calculated using the STM32 CRC algorithm over the whole image data with the header CRC and length fields both set to 0xffffffff.
+
+## crc32
+
+usage: `crc32 <warefile>`
+
+This tool calculates and verifies the CRC of both boot loader and firmware images.
 
 ## Fun facts
 
