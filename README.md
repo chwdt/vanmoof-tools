@@ -50,6 +50,8 @@ This tool calculates and verifies the CRC of both boot loader and firmware image
 ## Offsets in smart controller internal flash:
 
 0x08000000: stm32 boot loader
+0x08008000: bike config A
+0x0800c000: bike config B
 0x08010000: shifterware image
 0x08020000: mainware image
 0x08060000: shadow image
