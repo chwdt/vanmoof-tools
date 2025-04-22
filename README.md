@@ -51,13 +51,11 @@ This tool calculates and verifies the CRC of both boot loader and firmware image
 
 usage: `patch <mainware>`
 
-This tool patches a modern VanMoof mainware file, so the region OFFROAD is not reset to region US during boot. The power assistance level can be configured to 5 again.
+This tool patches a modern VanMoof mainware file, so the region OFFROAD is not reset to region US during boot. The power assistance level can be configured to 5 again. When cycling through power assistance levels using the handle bar, the bike will cycle through power level 5 as well.
 
 The file given on the command line is overwritten with the patched version of the file, so please make a backup of your mainware before using the tool.
 
 Currently the tool only works for mainware version 1.9.3.
-
-Missing: Add power level 5 when cycling through power levels using the handle bar button when in OFFROAD region. This is an additional feature compared to the old 1.7.6 mainware.
 
 
 ## Offsets in smart controller internal flash:

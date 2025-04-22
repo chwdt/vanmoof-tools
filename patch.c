@@ -111,8 +111,12 @@ int main(int argc, char** argv)
 		case 0x010903f4:
 			if ((ware_crc == 0x76c1ab9d) && (length == 0x0002fcc8)) {
 
+				/* Patch cycling of power level 5 not allowed */
+				uint32_t offset = 0x08027fb6 - MAINWARE_OFFSET;
+				uint16_t* pPowerButton = data + offset;
+
 				/* Patch power level 5 not allowed from BLE */
-				uint32_t offset = 0x0803a7ca - MAINWARE_OFFSET;
+				offset = 0x0803a7ca - MAINWARE_OFFSET;
 				uint16_t* pPowerBLE = data + offset;
 
 				/* Patch region 3 not allowed from BLE */
@@ -131,7 +135,8 @@ int main(int argc, char** argv)
 				    (pRegion[1] == 0xf884) && (pRegion[2] == 0x9109) &&	/* strb.eq.w r9,[r4,#0x109] */
 				    (pRegionBLE[0] == 0x2b02) &&			/* cmp r3,#2 */
 				    (pPower[0] == 0x2b04) &&				/* cmp r3,#4 */
-				    (pPowerBLE[0] == 0x2b04)) {				/* cmp r3,#4 */
+				    (pPowerBLE[0] == 0x2b04) &&				/* cmp r3,#4 */
+				    (pPowerButton[0] == 0x2b04)) {			/* cmp r3,#4 */
 
 					pRegion[0] = 0xbf00;				/* nop */
 					pRegion[1] = 0xbf00;				/* nop */
@@ -140,6 +145,7 @@ int main(int argc, char** argv)
 
 					pPower[0] = 0x2b05;				/* cmp r3,#5 */
 					pPowerBLE[0] = 0x2b05;				/* cmp r3,#5 */
+					pPowerButton[0] = 0x2b05;			/* cmp r3,#5 */
 
 					uint32_t crc = initial_crc;
 
