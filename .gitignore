@@ -1,3 +1,5 @@
 *.o
 unpack
 crc32
+patch
+*.bin

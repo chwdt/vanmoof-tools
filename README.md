@@ -47,6 +47,16 @@ usage: `crc32 <warefile>`
 
 This tool calculates and verifies the CRC of both boot loader and firmware images.
 
+## patch
+
+usage: `patch <mainware>`
+
+This tool patches a modern VanMoof mainware file, so the region OFFROAD is not reset to region US during boot.
+
+The file given on the command line is overwritten with the patched version of the file, so please make a backup of your mainware before using the tool.
+
+Currently the tool only works for mainware version 1.9.3.
+
 ## Offsets in smart controller internal flash:
 
 0x08000000: stm32 boot loader

@@ -12,4 +12,6 @@ typedef struct {
 	char time[12];
 } vanmoof_ware_t;
 
+#define MAINWARE_OFFSET 0x08020000
+
 #endif
