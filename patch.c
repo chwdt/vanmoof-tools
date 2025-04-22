@@ -119,14 +119,20 @@ int main(int argc, char** argv)
 				offset = 0x0803a7ca - MAINWARE_OFFSET;
 				uint16_t* pPower = data + offset;
 
+				/* Patch region 3 not allowed from BLE */
+				offset = 0x0803a876 - MAINWARE_OFFSET;
+				uint16_t* pRegionBLE = data + offset;
+
 				if ((pRegion[0] == 0xbf08) &&				/* it eq */
 				    (pRegion[1] == 0xf884) && (pRegion[2] == 0x9109) &&	/* strb.eq.w r9,[r4,#0x109] */
-				    (pPower[0] == 0x2b04)) {				/* cmp r3,#4 */
+				    (pPower[0] == 0x2b04) &&				/* cmp r3,#4 */
+				    (pRegionBLE[0] == 0x2b02)) {			/* cmp r3,#2 */
 
 					pRegion[0] = 0xbf00;				/* nop */
 					pRegion[1] = 0xbf00;				/* nop */
 					pRegion[2] = 0xbf00;				/* nop */
 					pPower[0] = 0x2b05;				/* cmp r3,#5 */
+					pRegionBLE[0] = 0x2b03;				/* cmp r3,#3 */
 
 					uint32_t crc = initial_crc;
 
