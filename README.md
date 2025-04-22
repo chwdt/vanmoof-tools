@@ -73,7 +73,10 @@ Currently the tool only works for mainware version 1.9.3.
 
 0x20000a00: Bike configuration
    + 0x109: Region
-   + 0x3d1: Power level
+   + 0x316: Power level + high bit?
+   + 0x3d1: Power level (init from 0x316 & 0x7f)
+   + 0x3d2: Power level (copy, init from 0x316 & 0x7f)
+   + 0x3d3: Power level high bit? (init from 0x316 >> 7)
 
 ## Fun facts
 

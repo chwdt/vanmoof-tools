@@ -111,28 +111,35 @@ int main(int argc, char** argv)
 		case 0x010903f4:
 			if ((ware_crc == 0x76c1ab9d) && (length == 0x0002fcc8)) {
 
-				/* Patch region 3 reset to region 1 */
-				uint32_t offset = 0x0803ef00 - MAINWARE_OFFSET;
-				uint16_t* pRegion = data + offset;
-
-				/* Patch power level 5 */
-				offset = 0x0803a7ca - MAINWARE_OFFSET;
-				uint16_t* pPower = data + offset;
+				/* Patch power level 5 not allowed from BLE */
+				uint32_t offset = 0x0803a7ca - MAINWARE_OFFSET;
+				uint16_t* pPowerBLE = data + offset;
 
 				/* Patch region 3 not allowed from BLE */
 				offset = 0x0803a876 - MAINWARE_OFFSET;
 				uint16_t* pRegionBLE = data + offset;
 
+				/* Patch region 3 reset to region 1 during boot */
+				offset = 0x0803ef00 - MAINWARE_OFFSET;
+				uint16_t* pRegion = data + offset;
+
+				/* Patch power level 5 reset to 4 during boot */
+				offset = 0x0803ef0a - MAINWARE_OFFSET;
+				uint16_t* pPower = data + offset;
+
 				if ((pRegion[0] == 0xbf08) &&				/* it eq */
 				    (pRegion[1] == 0xf884) && (pRegion[2] == 0x9109) &&	/* strb.eq.w r9,[r4,#0x109] */
+				    (pRegionBLE[0] == 0x2b02) &&			/* cmp r3,#2 */
 				    (pPower[0] == 0x2b04) &&				/* cmp r3,#4 */
-				    (pRegionBLE[0] == 0x2b02)) {			/* cmp r3,#2 */
+				    (pPowerBLE[0] == 0x2b04)) {				/* cmp r3,#4 */
 
 					pRegion[0] = 0xbf00;				/* nop */
 					pRegion[1] = 0xbf00;				/* nop */
 					pRegion[2] = 0xbf00;				/* nop */
-					pPower[0] = 0x2b05;				/* cmp r3,#5 */
 					pRegionBLE[0] = 0x2b03;				/* cmp r3,#3 */
+
+					pPower[0] = 0x2b05;				/* cmp r3,#5 */
+					pPowerBLE[0] = 0x2b05;				/* cmp r3,#5 */
 
 					uint32_t crc = initial_crc;
 
