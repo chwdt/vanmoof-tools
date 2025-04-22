@@ -57,6 +57,9 @@ The file given on the command line is overwritten with the patched version of th
 
 Currently the tool only works for mainware version 1.9.3.
 
+Missing: Add power level 5 when cycling through power levels using the handle bar button when in OFFROAD region. This is an additional feature compared to the old 1.7.6 mainware.
+
+
 ## Offsets in smart controller internal flash:
 
 0x08000000: stm32 boot loader
