@@ -69,6 +69,12 @@ Currently the tool only works for mainware version 1.9.3.
 0x080c0000: batteryware image
 0x080e0000: bmsboot image
 
+## Offsets in smart controller internal SRAM:
+
+0x20000a00: Bike configuration
+   + 0x109: Region
+   + 0x3d1: Power level
+
 ## Fun facts
 
 The magic numbers used by VanMoof have been used previously by others, this gives some funny output when using the unix `file` command:

@@ -18,8 +18,8 @@ static char *progname;
 static void
 usage(void)
 {
-        fprintf(stderr, "usage: %s <binfile>\n", progname);
-        exit(1);
+	fprintf(stderr, "usage: %s <binfile>\n", progname);
+	exit(1);
 }
 
 static const uint32_t crc_poly = 0x4c11db7;
@@ -109,15 +109,24 @@ int main(int argc, char** argv)
 
 		switch (le32toh(ware.version)) {
 		case 0x010903f4:
-		    	if ((le32toh(ware.crc) == 0x76c1ab9d) && (le32toh(ware.length) == 0x0002fcc8)) {
+			if ((ware_crc == 0x76c1ab9d) && (length == 0x0002fcc8)) {
 
+				/* Patch region 3 reset to region 1 */
 				uint32_t offset = 0x0803ef00 - MAINWARE_OFFSET;
-				uint16_t* pInst = data + offset;
+				uint16_t* pRegion = data + offset;
 
-				if ((pInst[0] == 0xbf08) && (pInst[1] == 0xf884) && (pInst[2] == 0x9109)) {
-					pInst[0] = 0xbf00;
-					pInst[1] = 0xbf00;
-					pInst[2] = 0xbf00;
+				/* Patch power level 5 */
+				offset = 0x0803a7ca - MAINWARE_OFFSET;
+				uint16_t* pPower = data + offset;
+
+				if ((pRegion[0] == 0xbf08) &&				/* it eq */
+				    (pRegion[1] == 0xf884) && (pRegion[2] == 0x9109) &&	/* strb.eq.w r9,[r4,#0x109] */
+				    (pPower[0] == 0x2b04)) {				/* cmp r3,#4 */
+
+					pRegion[0] = 0xbf00;				/* nop */
+					pRegion[1] = 0xbf00;				/* nop */
+					pRegion[2] = 0xbf00;				/* nop */
+					pPower[0] = 0x2b05;				/* cmp r3,#5 */
 
 					uint32_t crc = initial_crc;
 
