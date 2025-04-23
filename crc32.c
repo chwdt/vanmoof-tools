@@ -24,9 +24,9 @@ usage(void)
 static const uint32_t crc_poly = 0x4c11db7;
 static const uint32_t initial_crc = 0xffffffff;
 
-uint32_t crc32_calculate(uint32_t crc, void *data, size_t length)
+static uint32_t crc32_calculate(uint32_t crc, const void *data, size_t length)
 {
-	uint32_t *p = data;
+	const uint32_t *p = data;
 	size_t i, b;
 
 	for (i = 0; i < length; i += sizeof(uint32_t)) {
@@ -38,6 +38,21 @@ uint32_t crc32_calculate(uint32_t crc, void *data, size_t length)
 				crc <<= 1;
 		}
 	}
+
+	return crc;
+}
+
+static uint32_t ware_crc(uint32_t crc, const vanmoof_ware_t *ware, const void *data, size_t length)
+{
+	vanmoof_ware_t tmp;
+
+	memcpy(&tmp, ware, sizeof(tmp));
+	tmp.crc = 0xffffffff;
+	tmp.length = 0xffffffff;
+
+	crc = crc32_calculate(crc, &tmp, sizeof(tmp));
+
+	crc = crc32_calculate(crc, data + sizeof(tmp), length - sizeof(tmp));
 
 	return crc;
 }
@@ -78,8 +93,6 @@ int main(int argc, char** argv)
 	vanmoof_ware_t ware;
 	memcpy(&ware, data, sizeof(ware));
 
-	uint32_t crc = initial_crc;
-
 	if (le32toh(ware.magic) == WARE_MAGIC) {
 		printf("%s: vanmoof ware magic OK\n", filename);
 		printf("%s: vanmoof ware version %08x\n", filename, le32toh(ware.version));
@@ -95,28 +108,22 @@ int main(int argc, char** argv)
 			exit(1);
 		}
 
-		uint32_t ware_crc = le32toh(ware.crc);
+		uint32_t crc = ware_crc(initial_crc, &ware, data, length);
 
-		ware.crc = 0xffffffff;
-		ware.length = 0xffffffff;
-		crc = crc32_calculate(crc, &ware, sizeof(ware));
+		printf("%s: CRC 0x%08x %s\n", filename, crc, crc == le32toh(ware.crc) ? "OK" : "FAIL");
 
-		crc = crc32_calculate(crc, data + sizeof(ware), length - sizeof(ware));
-
-		printf("%s: CRC 0x%08x %s\n", filename, crc, crc == ware_crc ? "OK" : "FAIL");
-
-		if (crc != ware_crc)
+		if (crc != le32toh(ware.crc))
 			exit(1);
 	} else {
 		printf("%s: vanmoof ware magic not found, assume boot-loader binary\n", filename);
 
-		uint32_t expected_crc = le32toh(*(uint32_t *)(data + st.st_size - sizeof(crc)));
-		uint8_t *version = (uint8_t *)(data + st.st_size - 2 * sizeof(crc));
+		uint32_t expected_crc = le32toh(*(uint32_t *)(data + st.st_size - sizeof(uint32_t)));
+		uint8_t *version = (uint8_t *)(data + st.st_size - 2 * sizeof(uint32_t));
 
 		printf("%s: version %c%c%c\n", filename, version[3], version[2], version[1]);
 		printf("%s: expected CRC 0x%08x\n", filename, expected_crc);
 
-		crc = crc32_calculate(crc, data, st.st_size - sizeof(crc));
+		uint32_t crc = crc32_calculate(initial_crc, data, st.st_size - sizeof(uint32_t));
 
 		printf("%s: CRC 0x%08x %s\n", filename, crc, crc == expected_crc ? "OK" : "FAIL");
 
