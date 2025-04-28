@@ -2,4 +2,6 @@
 unpack
 crc32
 patch
+patch-dump
 *.bin
+*.hex

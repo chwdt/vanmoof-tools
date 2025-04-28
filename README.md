@@ -58,6 +58,25 @@ The file given on the command line is overwritten with the patched version of th
 Currently the tool only works for mainware version 1.9.3.
 
 
+## patch-dump
+
+This tool patches a modern VanMoof mainware as `patch` above, but adds a function to dump the whole FLASH to the console. This function is patched into the `help` command and will output the FLASH as S-Records.
+
+Capture the terminal output to a logfile and clip out the S-Records to a file `vanmoof.srec`. To convert this dump to the different binaries used inside the bike, use these shell commands:
+
+```
+objcopy -I srec -O binary vanmoof.srec vanmoof.bin
+dd if=vanmoof.bin of=muco-boot.bin bs=4096 count=8
+dd if=vanmoof.bin of=vanmoof-config-a.bin bs=4096 skip=8 count=4
+dd if=vanmoof.bin of=vanmoof-config-b.bin bs=4096 skip=12 count=4
+dd if=vanmoof.bin of=shifterware.bin bs=4096 skip=16 count=16
+dd if=vanmoof.bin of=mainware.bin bs=4096 skip=32 count=64
+dd if=vanmoof.bin of=shadowware.bin bs=4096 skip=96 count=64
+dd if=vanmoof.bin of=motorware.bin bs=4096 skip=160 count=32
+dd if=vanmoof.bin of=batteryware.bin bs=4096 skip=192 count=32
+dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
+```
+
 ## Offsets in smart controller internal flash:
 
 0x08000000: stm32 boot loader
