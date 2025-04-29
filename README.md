@@ -79,6 +79,7 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 
 ## Offsets in smart controller internal flash:
 
+```
 0x08000000: stm32 boot loader
 0x08008000: bike config A
 0x0800c000: bike config B
@@ -88,15 +89,18 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 0x080a0000: motorware image
 0x080c0000: batteryware image
 0x080e0000: bmsboot image
+```
 
 ## Offsets in smart controller internal SRAM:
 
+```
 0x20000a00: Bike configuration
    + 0x109: Region
    + 0x316: Power level + high bit?
    + 0x3d1: Power level (init from 0x316 & 0x7f)
    + 0x3d2: Power level (copy, init from 0x316 & 0x7f)
    + 0x3d3: Power level high bit? (init from 0x316 >> 7)
+```
 
 ## Fun facts
 
