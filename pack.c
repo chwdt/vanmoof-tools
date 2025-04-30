@@ -79,7 +79,12 @@ main(int argc, char **argv)
 			exit(1);
 		}
 
-		strncpy(entries[i].filename, argv[i + 2], sizeof(entries[i].filename));
+		char *basename = strrchr(argv[i + 2], '/');
+		if (basename)
+			basename++;
+		else
+			basename = argv[i + 2];
+		strncpy(entries[i].filename, basename, sizeof(entries[i].filename));
 		entries[i].offset = htole32(offset);
 		entries[i].length = htole32(st.st_size);
 
