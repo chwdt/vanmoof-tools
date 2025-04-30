@@ -1,4 +1,5 @@
 *.o
+pack
 unpack
 crc32
 patch
