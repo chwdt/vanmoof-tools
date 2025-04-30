@@ -18,11 +18,12 @@ static char *progname;
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: %s <binfile>\n", progname);
+	fprintf(stderr, "usage: %s [-v] [-f <fake-version>] <binfile>\n", progname);
 	exit(1);
 }
 
 typedef struct {
+	const char* name;
 	off_t offset;
 	size_t size;
 	const uint16_t *expect;
@@ -45,18 +46,18 @@ static const uint16_t rpl_cmp_r3_5[] = {
 	0x2b05		/*	cmp	r3, #5			*/
 };
 
-static const uint16_t exp_region_1_9_1[] = {
+static const uint16_t exp_region_1_9_3[] = {
 	0xbf08,		/*	it	eq			*/
 	0xf884, 0x9109	/*	strb.eq.w r9, [r4,#0x109]	*/
 };
 
-static const uint16_t rpl_region_1_9_1[] = {
+static const uint16_t rpl_region_1_9_3[] = {
 	0xbf00,		/*	nop				*/
 	0xbf00,		/*	nop				*/
 	0xbf00		/*	nop				*/
 };
 
-static const uint16_t exp_power_button_1_9_1[] = {
+static const uint16_t exp_power_button_1_9_3[] = {
 	0x3301,		/*	adds	r3, #1			*/
 	0xb2db,		/*	uxtb	r3, r3			*/
 	0x2b04,		/*	cmp	r3, #4			*/
@@ -64,7 +65,7 @@ static const uint16_t exp_power_button_1_9_1[] = {
 	0x2300,		/*	mov.hi	r3, #0			*/
 };
 
-static const uint16_t rpl_power_button_1_9_1[] = {
+static const uint16_t rpl_power_button_1_9_3[] = {
 	0x4901,		/*	ldr	r1, [pc,#4]		*/
 	0x4788,		/*	blx	r1			*/
 	0xe001,		/*	b.n	<pc+4>			*/
@@ -93,45 +94,43 @@ static const uint16_t rpl_power_level_inc[] = {
 #ifdef DUMP
 
 static const uint16_t exp_dump[] = {
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0060 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0070 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0080 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0090 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 00a0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 00b0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 00c0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 00d0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 00e0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 00f0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0100 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0110 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0120 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0130 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0140 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0150 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0160 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0170 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0180 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 0190 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 01a0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 01b0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 01c0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 01d0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 01e0 */
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, /* 01f0 */
 };
 
-static const uint16_t rpl_dump_1_9_1[] = {
+static const uint16_t rpl_dump_1_9_3[] = {
 #include "dump.hex"
 };
 
-static const uint16_t exp_help_1_9_1[] = {
+static const uint16_t exp_help_1_9_3[] = {
 	0x5e05, 0x0803
 };
 
-static const uint16_t rpl_help_1_9_1[] = {
+static const uint16_t rpl_help_1_9_3[] = {
 	0x0061, 0x0802
 };
 
@@ -141,14 +140,15 @@ static const uint16_t exp_version_1_9_3[] = {
 	0x03f4, 0x0109
 };
 
-static const uint16_t rpl_version_1_6_8[] = {
-	0x08f4, 0x0106
+static uint16_t rpl_version_any[] = {
+	0x00f4, 0x0000
 };
 
 #define N_ARRAY(a) (sizeof(a) / sizeof(a[0]))
 
 /* Patch region 3 not allowed from BLE */
-static const patch_t patch_region_ble_1_9_1 = {
+static const patch_t patch_region_ble_1_9_3 = {
+	"Region 3 from BLE",
 	0x0803a876,
 	N_ARRAY(rpl_cmp_r3_3),
 	exp_cmp_r3_2,
@@ -156,7 +156,8 @@ static const patch_t patch_region_ble_1_9_1 = {
 };
 
 /* Patch power level 5 not allowed from BLE */
-static const patch_t patch_power_ble_1_9_1 = {
+static const patch_t patch_power_ble_1_9_3 = {
+	"Power 5 from BLE",
 	0x0803a7ca,
 	N_ARRAY(rpl_cmp_r3_5),
 	exp_cmp_r3_4,
@@ -164,7 +165,8 @@ static const patch_t patch_power_ble_1_9_1 = {
 };
 
 /* Patch power level 5 reset to 4 during boot */
-static const patch_t patch_power_1_9_1 = {
+static const patch_t patch_power_1_9_3 = {
+	"Power 5 at startup",
 	0x0803ef0a,
 	N_ARRAY(rpl_cmp_r3_5),
 	exp_cmp_r3_4,
@@ -172,23 +174,26 @@ static const patch_t patch_power_1_9_1 = {
 };
 
 /* Patch region 3 reset to region 1 during boot */
-static const patch_t patch_region_1_9_1 = {
+static const patch_t patch_region_1_9_3 = {
+	"Region 3 at startup",
 	0x0803ef00,
-	N_ARRAY(rpl_region_1_9_1),
-	exp_region_1_9_1,
-	rpl_region_1_9_1
+	N_ARRAY(rpl_region_1_9_3),
+	exp_region_1_9_3,
+	rpl_region_1_9_3
 };
 
 /* Patch cycling of power level 5 not allowed */
-static const patch_t patch_power_button_1_9_1 = {
+static const patch_t patch_power_button_1_9_3 = {
+	"Power 5 handle bar",
 	0x08027fb2,
-	N_ARRAY(rpl_power_button_1_9_1),
-	exp_power_button_1_9_1,
-	rpl_power_button_1_9_1
+	N_ARRAY(rpl_power_button_1_9_3),
+	exp_power_button_1_9_3,
+	rpl_power_button_1_9_3
 };
 
 /* Increment function for power level cycling patch */
 static const patch_t patch_power_level_inc = {
+	"Power 5 handle bar helper",
 	0x08020028,
 	N_ARRAY(rpl_power_level_inc),
 	exp_power_level_inc,
@@ -197,49 +202,56 @@ static const patch_t patch_power_level_inc = {
 
 #ifdef DUMP
 
-static const patch_t patch_dump_1_9_1 = {
+static const patch_t patch_dump_1_9_3 = {
+	"Dump FLASH function",
 	0x08020060,
-	N_ARRAY(rpl_dump_1_9_1),
+	N_ARRAY(rpl_dump_1_9_3),
 	exp_dump,
-	rpl_dump_1_9_1
+	rpl_dump_1_9_3
 };
 
-static const patch_t patch_help_1_9_1 = {
+static const patch_t patch_help_1_9_3 = {
+	"Hijack help command",
 	0x0804e05c,
-	N_ARRAY(rpl_help_1_9_1),
-	exp_help_1_9_1,
-	rpl_help_1_9_1
+	N_ARRAY(rpl_help_1_9_3),
+	exp_help_1_9_3,
+	rpl_help_1_9_3
 };
 
 #endif /* DUMP */
 
-static const patch_t patch_version_head_1_9_1 = {
+static const patch_t patch_version_head_1_9_3 = {
+	"Fixup header version",
 	0x08020004,
-	N_ARRAY(rpl_version_1_6_8),
+	N_ARRAY(rpl_version_any),
 	exp_version_1_9_3,
-	rpl_version_1_6_8
+	rpl_version_any
 };
 
-static const patch_t patch_version_1_9_1 = {
+static const patch_t patch_version_1_9_3 = {
+	"Fixup mainware version",
 	0x0803f0f0,
-	N_ARRAY(rpl_version_1_6_8),
+	N_ARRAY(rpl_version_any),
 	exp_version_1_9_3,
-	rpl_version_1_6_8
+	rpl_version_any
 };
 
-static const patch_t *patches_1_9_1[] = {
-	&patch_region_ble_1_9_1,
-	&patch_power_ble_1_9_1,
-	&patch_power_1_9_1,
-	&patch_region_1_9_1,
-	&patch_power_button_1_9_1,
+static const patch_t *patches_1_9_3[] = {
+	&patch_region_ble_1_9_3,
+	&patch_power_ble_1_9_3,
+	&patch_power_1_9_3,
+	&patch_region_1_9_3,
+	&patch_power_button_1_9_3,
 	&patch_power_level_inc,
 #ifdef DUMP
-	&patch_help_1_9_1,
-	&patch_dump_1_9_1,
+	&patch_help_1_9_3,
+	&patch_dump_1_9_3,
 #endif /* DUMP */
-	&patch_version_head_1_9_1,
-	&patch_version_1_9_1
+};
+
+static const patch_t *version_1_9_3[] = {
+	&patch_version_head_1_9_3,
+	&patch_version_1_9_3
 };
 
 typedef struct {
@@ -247,14 +259,50 @@ typedef struct {
 	const char *time;
 	size_t n_patches;
 	const patch_t **patches;
+	size_t n_version_patches;
+	const patch_t **version_patches;
 } patchset_t;
 
-static const patchset_t patchset_1_9_1 = {
-	"Apr 23 2025",
-	"09:38:07",
-	N_ARRAY(patches_1_9_1),
-	patches_1_9_1,
+static const patchset_t patchset_1_9_3 = {
+	"Apr 30 2025",
+	"10:30:52",
+	N_ARRAY(patches_1_9_3),
+	patches_1_9_3,
+	N_ARRAY(version_1_9_3),
+	version_1_9_3,
 };
+
+static void setup_version_patches(const char *fake_version, int verbose)
+{
+	uint8_t major_version = 0, minor_version = 0, patch_version = 0;
+	char *end;
+
+	const char *p = fake_version;
+	major_version = strtoul(p, &end, 10);
+	if ((end == p) || (*end != '.')) {
+		fprintf(stderr, "%s: can't parse version '%s'\n", progname, fake_version);
+		exit(1);
+	}
+	p = end + 1;
+	minor_version = strtoul(p, &end, 10);
+	if ((end == p) || (*end != '.')) {
+		fprintf(stderr, "%s: can't parse version '%s'\n", progname, fake_version);
+		exit(1);
+	}
+	p = end + 1;
+	patch_version = strtoul(p, &end, 10);
+	if ((end == p) || (*end != '\0')) {
+		fprintf(stderr, "%s: can't parse version '%s'\n", progname, fake_version);
+		exit(1);
+	}
+
+	rpl_version_any[0] |= (patch_version << 8);
+	rpl_version_any[1] = (major_version << 8) | minor_version;
+
+	if (verbose) {
+		printf("%s: patch version to %u.%u.%u\n", progname, major_version, minor_version, patch_version);
+	}
+}
 
 static const uint32_t crc_poly = 0x4c11db7;
 static const uint32_t initial_crc = 0xffffffff;
@@ -292,20 +340,38 @@ static uint32_t ware_crc(uint32_t crc, const vanmoof_ware_t *ware, const void *d
 	return crc;
 }
 
-static int verify_expected(const char *filename, const void *data, const patchset_t *set)
+static int verify_patch(const char *filename, const void *data, const patch_t *patch, int verbose)
+{
+	uint32_t offset = patch->offset - MAINWARE_OFFSET;
+	const uint16_t* inst = data + offset;
+
+	for (size_t i = 0; i < patch->size; i++) {
+		if (inst[i] != patch->expect[i]) {
+			fprintf(stderr, "%s: patch \"%s\": @0x%08x: inst[%zu] 0x%04x != expected 0x%04x\n",
+				filename, patch->name, patch->offset, i, inst[i], patch->expect[i]);
+			return -1;
+		}
+	}
+
+	if (verbose) {
+		printf("%s: verify \"%s\": @0x%08x [%u]: OK\n", progname, patch->name, patch->offset, patch->size);
+	}
+	return 0;
+}
+
+static int verify_expected(const char *filename, const void *data, const char* fake_version, const patchset_t *set, int verbose)
 {
 	int expect_ok = 1;
 
 	for (size_t i = 0; i < set->n_patches; i++) {
-		const patch_t* p = set->patches[i];
+		if (verify_patch(filename, data, set->patches[i], verbose) != 0) {
+			expect_ok = 0;
+		}
+	}
 
-		uint32_t offset = p->offset - MAINWARE_OFFSET;
-		const uint16_t* inst = data + offset;
-
-		for (size_t j = 0; j < p->size; j++) {
-			if (inst[j] != p->expect[j]) {
-				fprintf(stderr, "%s: patch @0x%08x: inst[%zu] 0x%04x != expected 0x%04x\n",
-					filename, p->offset, j, inst[j], p->expect[j]);
+	if (fake_version) {
+		for (size_t i = 0; i < set->n_version_patches; i++) {
+			if (verify_patch(filename, data, set->version_patches[i], verbose) != 0) {
 				expect_ok = 0;
 			}
 		}
@@ -314,32 +380,67 @@ static int verify_expected(const char *filename, const void *data, const patchse
 	return expect_ok;
 }
 
-static void apply_patches(void *data, const patchset_t *set)
+static void apply_patch(void *data, const patch_t *patch, int verbose)
+{
+	uint32_t offset = patch->offset - MAINWARE_OFFSET;
+	uint16_t* inst = data + offset;
+
+	for (size_t i = 0; i < patch->size; i++) {
+		inst[i] = patch->patch[i];
+	}
+
+	if (verbose) {
+		printf("%s: apply \"%s\": @0x%08x [%u]\n", progname, patch->name, patch->offset, patch->size);
+	}
+}
+
+static void apply_patches(void *data, const char *fake_version, const patchset_t *set, int verbose)
 {
 	for (size_t i = 0; i < set->n_patches; i++) {
-		const patch_t* p = set->patches[i];
+		apply_patch(data, set->patches[i], verbose);
+	}
 
-		uint32_t offset = p->offset - MAINWARE_OFFSET;
-		uint16_t* inst = data + offset;
-
-		for (size_t j = 0; j < p->size; j++) {
-			inst[j] = p->patch[j];
+	if (fake_version) {
+		for (size_t i = 0; i < set->n_version_patches; i++) {
+			apply_patch(data, set->version_patches[i], verbose);
 		}
 	}
 }
 
 int main(int argc, char** argv)
 {
+	char *fake_version = NULL;
+	int verbose = 0;
+	int opt;
+
 	progname = strrchr(argv[0], '/');
 	if (progname)
 		progname++;
 	else
 		progname = argv[0];
 
-	if (argc < 2)
-		usage();
+	while ((opt = getopt(argc, argv, "f:v")) != -1) {
+		switch (opt) {
+			case 'f':
+				fake_version = optarg;
+				break;
+			case 'v':
+				verbose++;
+				break;
+			default:
+				usage();
+		}
+	}
 
-	char *filename = argv[1];
+	if (optind >= argc) {
+		usage();
+	}
+
+	char *filename = argv[optind];
+
+	if (fake_version) {
+		setup_version_patches(fake_version, verbose);
+	}
 
 	int fd = open(filename, O_RDWR);
 	if (fd < 0) {
@@ -387,16 +488,16 @@ int main(int argc, char** argv)
 		switch (le32toh(ware.version)) {
 		case 0x010903f4:
 			if ((le32toh(ware.crc) == 0x76c1ab9d) && (length == 0x0002fcc8)) {
-				if (verify_expected(filename, data, &patchset_1_9_1)) {
-					apply_patches(data, &patchset_1_9_1);
+				if (verify_expected(filename, data, fake_version, &patchset_1_9_3, verbose)) {
+					apply_patches(data, fake_version, &patchset_1_9_3, verbose);
 
 					memcpy(&ware, data, sizeof(ware));
 
 					memset(ware.date, 0xff, sizeof(ware.date));
 					memset(ware.time, 0xff, sizeof(ware.time));
 
-					strcpy(ware.date, patchset_1_9_1.date);
-					strcpy(ware.time, patchset_1_9_1.time);
+					strcpy(ware.date, patchset_1_9_3.date);
+					strcpy(ware.time, patchset_1_9_3.time);
 
 					crc = ware_crc(initial_crc, &ware, data, length);
 
