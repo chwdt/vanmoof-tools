@@ -58,6 +58,13 @@ The file given on the command line is overwritten with the patched version of th
 Currently the tool only works for mainware version 1.9.3.
 
 
+## ble-patch
+
+usage: `ble-patch <bleware>`
+
+This tool patches the VanMoof bleware file, so the command `reset` is replaced with a command `dump-keys`. Using `dump-keys` inside the bledebug console will show the stored keys. These keys are two factory default keys used during bringup of the bike in factory, your API key, and the VanMoof manufacturer key. The latter is used to encrypt firmware images (when sending updates to the APP).
+
+
 ## patch-dump
 
 This tool patches a modern VanMoof mainware as `patch` above, but adds a function to dump the whole FLASH to the console. This function is patched into the `help` command and will output the FLASH as S-Records.
@@ -76,6 +83,7 @@ dd if=vanmoof.bin of=motorware.bin bs=4096 skip=160 count=32
 dd if=vanmoof.bin of=batteryware.bin bs=4096 skip=192 count=32
 dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ```
+
 
 ## Offsets in smart controller internal flash:
 
