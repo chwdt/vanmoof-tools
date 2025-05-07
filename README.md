@@ -96,7 +96,21 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ```
 0x20000a00: Bike configuration
    + 0x109: Region
+
+   + 0x310: EEPROM copy 0x3c bytes
+   + 0x310: Alarm state
+   + 0x311: Play lock sound
+   + 0x312: remote locked
+   + 0x313: Logging APP/Serial
+   + 0x314: Shipping
    + 0x316: Power level + high bit?
+   + 0x317: Alarm enable/disable
+   + 0x318: Horn file
+   + 0x31c: km * 10
+   + 0x334: Shifter tries
+   + 0x336: Shifter version
+   + 0x344: Wake counter
+
    + 0x3d1: Power level (init from 0x316 & 0x7f)
    + 0x3d2: Power level (copy, init from 0x316 & 0x7f)
    + 0x3d3: Power level high bit? (init from 0x316 >> 7)
