@@ -9,6 +9,7 @@
 #include <sys/mman.h>
 
 #include <endian.h>
+#include <zlib.h>
 
 #include "ware.h"
 
@@ -93,6 +94,9 @@ int main(int argc, char** argv)
 	vanmoof_ware_t ware;
 	memcpy(&ware, data, sizeof(ware));
 
+	ble_ware_t ble_ware;
+	memcpy(&ble_ware, data, sizeof(ble_ware));
+
 	if (le32toh(ware.magic) == WARE_MAGIC) {
 		printf("%s: vanmoof ware magic OK\n", filename);
 		printf("%s: vanmoof ware version %08x\n", filename, le32toh(ware.version));
@@ -114,6 +118,55 @@ int main(int argc, char** argv)
 
 		if (crc != le32toh(ware.crc))
 			exit(1);
+	} else if (memcmp(ble_ware.magic, BLE_WARE_MAGIC, sizeof(ble_ware.magic)) == 0) {
+		printf("%s: BLE ware magic OK\n", filename);
+		printf("%s: BLE ware version %08x\n", filename, le32toh(ble_ware.soft_ver));
+		printf("%s: BLE ware CRC 0x%08x\n", filename, le32toh(ble_ware.crc));
+		printf("%s: BLE ware length 0x%08x\n", filename, le32toh(ble_ware.len));
+
+		uint32_t length = le32toh(ble_ware.len);
+		if (length > st.st_size) {
+			printf("%s: BLE ware length 0x%08x extends beyond file size 0x%08zx\n",
+				filename, length, st.st_size);
+			exit(1);
+		}
+
+		uint32_t crc = crc32(0, data + 12, length - 12);
+
+		printf("%s: CRC 0x%08x %s\n", filename, crc, crc == le32toh(ble_ware.crc) ? "OK" : "FAIL");
+
+		if (crc != le32toh(ble_ware.crc))
+			exit(1);
+
+		printf("%s: BLE ware entry 0x%08x\n", filename, le32toh(ble_ware.prg_entry));
+		printf("%s: BLE ware hdr len 0x%08x\n", filename, le32toh(ble_ware.hdr_len));
+
+		ble_ware_seg_t seg;
+		size_t offset = le32toh(ble_ware.hdr_len);
+
+		while (offset < st.st_size) {
+			memcpy(&seg, data + offset, sizeof(ble_ware_seg_t));
+			printf("%s: BLE ware seg type 0x%02x\n", filename, seg.seg_type);
+			printf("%s: BLE ware seg len 0x%08x\n", filename, le32toh(seg.seg_len));
+
+			if (seg.seg_type == BLE_SEG_TYPE_SIGNATURE) {
+				ble_ware_signature_seg_t sig;
+
+				memcpy(&sig, data + offset + sizeof(ble_ware_seg_t),
+				       le32toh(seg.seg_len) - sizeof(ble_ware_seg_t));
+				printf("%s: BLE ware signature ver 0x%02x\n", filename, sig.sig_ver);
+				printf("%s: BLE ware signature timestamp 0x%08x\n", filename, le32toh(sig.timestamp));
+				printf("%s: BLE ware signature signer %02x %02x %02x %02x %02x %02x %02x %02x\n",
+				       filename, sig.ecdsa_signer[0], sig.ecdsa_signer[1], sig.ecdsa_signer[2],
+				       sig.ecdsa_signer[3], sig.ecdsa_signer[4], sig.ecdsa_signer[5],
+				       sig.ecdsa_signer[6], sig.ecdsa_signer[7]);
+				printf("%s: BLE ware signature %02x %02x %02x %02x ...\n",
+				       filename, sig.ecdsa_signature[0], sig.ecdsa_signature[1],
+				       sig.ecdsa_signature[2], sig.ecdsa_signature[3]);
+			}
+
+			offset += le32toh(seg.seg_len);
+		}
 	} else {
 		printf("%s: vanmoof ware magic not found, assume boot-loader binary\n", filename);
 

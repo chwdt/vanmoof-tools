@@ -1,3 +1,6 @@
+CC = gcc
+LDLIBS = -lz
+
 all: pack unpack crc32 patch patch-dump
 
 pack: pack.o
@@ -22,6 +25,15 @@ dump.bin: dump.o
 	arm-none-eabi-objcopy -O binary $< $@
 
 dump.o: dump.c
+	arm-none-eabi-gcc -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fPIC -fno-toplevel-reorder -c $<
+
+uart5.hex: uart5.bin
+	od -An -tx2 $< | sed -e 's/\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\)/0x\1,/g' >$@
+
+uart5.bin: uart5.o
+	arm-none-eabi-objcopy -O binary $< $@
+
+uart5.o: uart5.c
 	arm-none-eabi-gcc -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fPIC -fno-toplevel-reorder -c $<
 
 clean:
