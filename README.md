@@ -66,6 +66,23 @@ This tool patches the VanMoof bleware file, so the command `reset` is replaced w
 
 You can update the patched bleware on the bike by creating a pack containing this bleware and using the command `pack-upload` inside the bledebug console. You need to send the created pack using ymodem.
 
+Output looks like:
+
+```
+> dump-keys
+Key 0x00: UKEY 52XXXXXXXXXXXXXXXXXXXXXXXXXXXX2f 00000001 000003fe CRC 81XXXX92
+Key 0x7d: UKEY 5f5f5f5f5f4f574e45525f5045524d53 00000000 ffffffff CRC 4f25ee68
+Key 0x7e: MKEY 710b2ea0dc8568b7b5e5ec0b8a39dae9 00000000 00000000 CRC a69429b6
+Key 0x7f: MKEY 46383841XXXXXXXXXXXXXXXX4d4f4f46 00000000 ffffffff CRC 4aXXXX7e
+```
+
+The keys 0x7d and 0x7f seem to be the factory bring-up keys, translated to ASCII they read:
+
+```
+Key 0x7d: UKEY _____OWNER_PERMS 00000000 ffffffff CRC 4f25ee68
+Key 0x7f: MKEY F88AXXXXXXXXMOOF 00000000 ffffffff CRC 4aXXXX7e
+               ^- Bike MAC Address
+```
 
 ## patch-dump
 
