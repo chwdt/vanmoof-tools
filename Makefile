@@ -1,40 +1,49 @@
 CC = gcc
 LDLIBS = -lz
 
-all: pack unpack crc32 patch patch-dump
+CFLAGS = -O1 -g
+
+ARM_FLAGS = -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
+	-ffreestanding -fPIC -fno-toplevel-reorder
+
+all: pack unpack crc32 patch patch-dump ble-patch
 
 pack: pack.o
 unpack: unpack.o
 crc32: crc32.o
 patch: patch.o
+patch-dump: patch-dump.o
+ble-patch: ble-patch.o
 
 pack.o: pack.c pack.h
 unpack.o: unpack.c pack.h
 crc32.o: crc32.c ware.h
 patch.o: patch.c ware.h
-
-patch-dump: patch-dump.o
+ble-patch.o: ble-patch.c ware.h keys.hex
 
 patch-dump.o: patch.c ware.h dump.hex
 	$(CC) $(CFLAGS) -DDUMP -o $@ -c $<
 
 dump.hex: dump.bin
-	od -An -tx2 $< | sed -e 's/\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\)/0x\1,/g' >$@
+	od -v -An -tx2 $< | sed -e 's/\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\)/0x\1,/g' >$@
 
 dump.bin: dump.o
 	arm-none-eabi-objcopy -O binary $< $@
 
 dump.o: dump.c
-	arm-none-eabi-gcc -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fPIC -fno-toplevel-reorder -c $<
+	arm-none-eabi-gcc $(ARM_FLAGS) -c $<
 
-uart5.hex: uart5.bin
-	od -An -tx2 $< | sed -e 's/\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\)/0x\1,/g' >$@
+keys.hex: keys.bin
+	od -v -An -tx2 $< | sed -e 's/\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\)/0x\1,/g' >$@
 
-uart5.bin: uart5.o
+keys.bin: keys
 	arm-none-eabi-objcopy -O binary $< $@
 
-uart5.o: uart5.c
-	arm-none-eabi-gcc -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fPIC -fno-toplevel-reorder -c $<
+keys: keys.o keys.ld
+	arm-none-eabi-ld -T keys.ld -e dump_keys -o $@ $<
+
+keys.o: keys.c
+	arm-none-eabi-gcc $(ARM_FLAGS) -c $<
 
 clean:
 	rm -f *.o unpack crc32 patch patch-dump

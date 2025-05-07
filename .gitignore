@@ -4,5 +4,7 @@ unpack
 crc32
 patch
 patch-dump
+ble-patch
+keys
 *.bin
 *.hex
