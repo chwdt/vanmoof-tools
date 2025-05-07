@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 			printf("%s: BLE ware seg type 0x%02x\n", filename, seg.seg_type);
 			printf("%s: BLE ware seg len 0x%08x\n", filename, le32toh(seg.seg_len));
 
-			if (seg.seg_type == BLE_SEG_TYPE_SIGNATURE) {
+			if (seg.seg_type == BLE_SEG_TYPE_SECURITY) {
 				ble_ware_signature_seg_t sig;
 
 				memcpy(&sig, data + offset + sizeof(ble_ware_seg_t),

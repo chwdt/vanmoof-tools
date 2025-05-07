@@ -15,6 +15,7 @@ typedef struct {
 } vanmoof_ware_t;
 
 #define BLE_WARE_MAGIC "OAD NVM1"
+#define BLE_WARE_OFFSET 0x00000000
 
 typedef struct {
 	uint8_t	magic[8];
@@ -42,8 +43,12 @@ typedef struct __attribute__((packed)) {
 	uint32_t seg_len;
 } ble_ware_seg_t;
 
-#define BLE_SEG_TYPE_SIGNATURE  3
-#define BLE_SEG_TYPE_CODE	1
+#define BLE_SEG_TYPE_BOUNDARY 0
+#define BLE_SEG_TYPE_CONTIGUOUS 1
+#define BLE_SEG_TYPE_NONCONTIGUOUS 2
+#define BLE_SEG_TYPE_SECURITY 3
+#define BLE_SEG_TYPE_NVRAM 4
+#define BLE_SEG_TYPE_DELTA 5
 
 typedef struct __attribute__((packed)) {
 	uint8_t sig_ver;
