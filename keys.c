@@ -12,7 +12,7 @@ static int strcmp(const char *, const char *);
 int
 dump_keys(int what, char *help)
 {
-	static const char fmt[] = "Key 0x%02x: %s %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x";
+	static const char fmt[] = "Key 0x%02x: %s %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x %08x %08x CRC %08x";
 	static const char name[] = "dump-keys";
 	static const char text[] = "dump API keys";
 	static const char file[] = __FILE__;
@@ -38,6 +38,9 @@ dump_keys(int what, char *help)
 
 		for (i = 0; i < 0x80; i++) {
 			if (get_key(i, key_data)) {
+				uint32_t *p0 = (uint32_t*)(key_data + 16);
+				uint32_t *p1 = (uint32_t*)(key_data + 20);
+				uint32_t *crc = (uint32_t*)(key_data + 28);
 				char type[5];
 				type[0] = key_data[24];
 				type[1] = key_data[25];
@@ -48,7 +51,8 @@ dump_keys(int what, char *help)
 					key_data[0], key_data[1], key_data[2], key_data[3],
 					key_data[4], key_data[5], key_data[6], key_data[7],
 					key_data[8], key_data[9], key_data[10], key_data[11],
-					key_data[12], key_data[13], key_data[14], key_data[15]);
+					key_data[12], key_data[13], key_data[14], key_data[15],
+					*p0, *p1, *crc);
 			}
 		}
 		return 0;
