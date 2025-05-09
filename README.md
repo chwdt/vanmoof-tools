@@ -62,14 +62,14 @@ Currently the tool only works for mainware version 1.9.3.
 
 usage: `ble-patch <bleware>`
 
-This tool patches the VanMoof bleware file, so the command `reset` is replaced with a command `dump-keys`. Using `dump-keys` inside the bledebug console will show the stored keys. These keys are two factory default keys used during bringup of the bike in factory, your API key, and the VanMoof manufacturer key. The latter is used to encrypt firmware images (when sending updates to the APP).
+This tool patches the VanMoof bleware file, so the command `reset` is replaced with a command `dump`. Using `dump keys` inside the bledebug console will show the stored keys. These keys are two factory default keys used during bringup of the bike in factory, your API key, and the VanMoof manufacturer key. The latter is used to encrypt firmware images (when sending updates to the APP).
 
 You can update the patched bleware on the bike by creating a pack containing this bleware and using the command `pack-upload` inside the bledebug console. You need to send the created pack using ymodem.
 
 Output looks like:
 
 ```
-> dump-keys
+> dump keys
 Key 0x00: UKEY 52XXXXXXXXXXXXXXXXXXXXXXXXXXXX2f 00000001 000003fe CRC 81XXXX92
 Key 0x7d: UKEY 5f5f5f5f5f4f574e45525f5045524d53 00000000 ffffffff CRC 4f25ee68
 Key 0x7e: MKEY 710b2ea0dc8568b7b5e5ec0b8a39dae9 00000000 00000000 CRC a69429b6
@@ -83,6 +83,16 @@ Key 0x7d: UKEY _____OWNER_PERMS 00000000 ffffffff CRC 4f25ee68
 Key 0x7f: MKEY F88AXXXXXXXXMOOF 00000000 ffffffff CRC 4aXXXX7e
                ^- Bike MAC Address
 ```
+
+This can also dump memory (i.e. ROM or internal FLASH):
+
+```
+> dump mem 10000000 40000
+10000000        00 20 00 11 b1 19 00 10   bf 20 00 10 c1 20 00 10       . ...... . ... ..
+10000010        c3 20 00 10 c3 20 00 10   c3 20 00 10 00 00 00 00       . ... .. . ......
+...
+```
+
 
 ## patch-dump
 
@@ -142,6 +152,15 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
    + 0x3d2: Power level (copy, init from 0x316 & 0x7f)
    + 0x3d3: Power level high bit? (init from 0x316 >> 7)
 ```
+
+
+## update.py
+
+
+A simple cheasy update tool to send firmware packed with `pack` to the bike. This needs pymoof https://github.com/quantsini/pymoof to run.
+
+Use as a reference for the firmware update over BLE.
+
 
 ## Fun facts
 

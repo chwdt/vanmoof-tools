@@ -40,7 +40,7 @@ keys.bin: keys
 	arm-none-eabi-objcopy -O binary $< $@
 
 keys: keys.o keys.ld
-	arm-none-eabi-ld -T keys.ld -e dump_keys -o $@ $<
+	arm-none-eabi-ld -T keys.ld -e dump -o $@ $<
 
 keys.o: keys.c
 	arm-none-eabi-gcc $(ARM_FLAGS) -c $<
