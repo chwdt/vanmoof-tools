@@ -84,13 +84,17 @@ Key 0x7f: MKEY F88AXXXXXXXXMOOF 00000000 ffffffff CRC 4aXXXX7e
                ^- Bike MAC Address
 ```
 
-This can also dump memory (i.e. ROM or internal FLASH):
+This can also dump memory (i.e. ROM, internal FLASH, or external FLASH):
 
 ```
 > dump mem 10000000 40000
 10000000        00 20 00 11 b1 19 00 10   bf 20 00 10 c1 20 00 10       . ...... . ... ..
 10000010        c3 20 00 10 c3 20 00 10   c3 20 00 10 00 00 00 00       . ... .. . ......
 ...
+
+> dump extflash 5afa0 20
+0005afa0        5f 5f 5f 5f 5f 4f 57 4e   45 52 5f 50 45 52 4d 53       _____OWN ER_PERMS
+0005afb0        00 00 00 00 ff ff ff ff   55 4b 45 59 68 ee 25 4f       ........ UKEYh.%O
 ```
 
 

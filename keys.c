@@ -3,6 +3,7 @@ typedef unsigned int uint32_t;
 typedef uint32_t size_t;
 
 #define LOGGER (0x6d90 + 1)
+#define READ_EXTFLASH (0x1c5a4 + 1)
 #define GET_KEY (0x20bb8 + 1)
 #define SHOW_HELP (0x21244 + 1)
 #define SSCANF (0x23838 + 1)
@@ -25,6 +26,7 @@ typedef struct {
 
 typedef void (*logger_t) (const char* file, int lineno, const char* function, uint32_t flags, const char* fmt, ...);
 typedef int (*get_key_t) (unsigned int index, uint8_t *data);
+typedef int (*read_extflash_t) (uint32_t addr, size_t len, uint8_t *data);
 typedef void (*show_help_t) (const char*, const char*);
 typedef int (*sscanf_t) (const char *str, const char *fmt, ...);
 
@@ -36,6 +38,7 @@ static int usage(const char *name, const char *args);
 
 static int dump_keys(const char *args);
 static int dump_mem(const char *args);
+static int dump_extflash(const char *args);
 
 int
 dump(int what, char *cmdline)
@@ -65,9 +68,12 @@ dump(int what, char *cmdline)
 
 			if (strncmp(args, "mem", 3) == 0)
 				return dump_mem(args);
+
+			if (strncmp(args, "extflash", 8) == 0)
+				return dump_extflash(args);
 		}
 
-		return usage("dump", "<keys|mem>");
+		return usage("dump", "<keys|mem|extflash>");
 
 	default:
 		return 1;
@@ -127,14 +133,38 @@ dump_keys(const char* args)
 	return 0;
 }
 
+static void
+dump_dataline(uint32_t addr, const uint8_t *data)
+{
+	static const char fmt[] = "%08x\t%02x %02x %02x %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x %02x %02x\t%s";
+	logger_t logger = (logger_t)LOGGER;
+	uint32_t i, j;
+
+	char text[16 + 2];
+	for (i = j = 0; i < 16; i++, j++) {
+		if (i == 8)
+			text[j++] = ' ';
+		if (0x1f < data[i] && data[i] < 0x7f)
+			text[j] = data[i];
+		else
+			text[j] = '.';
+	}
+	text[j] = '\0';
+
+	logger(__FILE__, __LINE__, __FUNCTION__, 9, fmt, addr,
+		data[0], data[1], data[2], data[3],
+		data[4], data[5], data[6], data[7],
+		data[8], data[9], data[10], data[11],
+		data[12], data[13], data[14], data[15],
+		text);
+}
+
 static int
 dump_mem(const char *args)
 {
-	static const char fmt[] = "%08x\t%02x %02x %02x %02x %02x %02x %02x %02x   %02x %02x %02x %02x %02x %02x %02x %02x\t%s";
 	sscanf_t sscanf = (sscanf_t)SSCANF;
-	logger_t logger = (logger_t)LOGGER;
 	uint32_t addr;
-	uint32_t i, j, n;
+	uint32_t n;
 
 	if (sscanf(args, "mem %x %x", &addr, &n) != 2) {
 		return usage("dump mem", "<addr> <n>");
@@ -145,28 +175,41 @@ dump_mem(const char *args)
 
 	uint8_t *data = (uint8_t *) addr;
 	while (n > 0) {
-		char text[16 + 2];
-		for (i = j = 0; i < 16; i++, j++) {
-			if (i == 8)
-				text[j++] = ' ';
-			if (0x1f < data[i] && data[i] < 0x7f)
-				text[j] = data[i];
-			else
-				text[j] = '.';
-		}
-		text[j] = '\0';
-
-		logger(__FILE__, __LINE__, __FUNCTION__, 9, fmt, addr,
-			data[0], data[1], data[2], data[3],
-			data[4], data[5], data[6], data[7],
-			data[8], data[9], data[10], data[11],
-			data[12], data[13], data[14], data[15],
-			text);
+		dump_dataline(addr, data);
 
 		wdg();
 
 		addr += 16;
 		data += 16;
+		n -= 16;
+	}
+
+	return 0;
+}
+
+static int
+dump_extflash(const char *args)
+{
+	read_extflash_t read_extflash = (read_extflash_t)READ_EXTFLASH;
+	sscanf_t sscanf = (sscanf_t)SSCANF;
+	uint8_t data[16];
+	uint32_t addr;
+	uint32_t n;
+
+	if (sscanf(args, "extflash %x %x", &addr, &n) != 2) {
+		return usage("dump extflash", "<addr> <n>");
+	}
+
+	addr &= ~(0xf);
+	n = (n + 0xf) & ~(0xf);
+
+	while (n > 0) {
+		read_extflash(addr, 16, data);
+		dump_dataline(addr, data);
+
+		wdg();
+
+		addr += 16;
 		n -= 16;
 	}
 
