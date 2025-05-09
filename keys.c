@@ -66,6 +66,7 @@ static void strcpy(char *d, const char *s)
 {
 	while (*s)
 		*d++ = *s++;
+	*d = '\0';
 }
 
 static int strcmp(const char *s1, const char *s2)
