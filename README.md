@@ -157,7 +157,7 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ## update.py
 
 
-A simple cheasy update tool to send firmware packed with `pack` to the bike. This needs pymoof https://github.com/quantsini/pymoof to run.
+A simple cheasy update tool to send firmware packed with `pack` to the bike. This needs [pymoof](https://github.com/quantsini/pymoof) to run.
 
 Use as a reference for the firmware update over BLE.
 
