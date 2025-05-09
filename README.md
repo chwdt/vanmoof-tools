@@ -159,6 +159,8 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 
 A simple cheasy update tool to send firmware packed with `pack` to the bike. This needs [pymoof](https://github.com/quantsini/pymoof) to run.
 
+You need to insert your bikes API key and manufacturer key before using the tool.
+
 Use as a reference for the firmware update over BLE.
 
 
