@@ -35,6 +35,14 @@ static const uint16_t rpl_keys_dump[] = {
 #include "keys.hex"
 };
 
+static const char exp_date_time[] = {
+	"Mar 29 2021 / 14:20:30",
+};
+
+static const char rpl_date_time[] = {
+	"May 12 2025 / 09:03:35",
+};
+
 typedef struct {
 	const char* name;
 	off_t offset;
@@ -61,9 +69,18 @@ static const patch_t patch_keys_dump = {
 	rpl_keys_dump,
 };
 
+static const patch_t patch_date_time = {
+	"date/time",
+	0x570f,
+	sizeof(rpl_date_time) / sizeof(uint16_t),
+	(uint16_t *)exp_date_time,
+	(uint16_t *)rpl_date_time,
+};
+
 static const patch_t *patches_1_4_1[] = {
 	&patch_offset_reset,
 	&patch_keys_dump,
+	&patch_date_time,
 };
 
 typedef struct {
@@ -76,8 +93,8 @@ typedef struct {
 } patchset_t;
 
 static const patchset_t patchset_1_4_1 = {
-	"2025 05 07",
-	"13:17:24",
+	"May 12 2025",
+	"09:03:35",
 	N_ARRAY(patches_1_4_1),
 	patches_1_4_1,
 	0,

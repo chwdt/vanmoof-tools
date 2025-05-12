@@ -21,40 +21,26 @@ typedef struct {
 	volatile uint32_t CR1;
 } UART_t;
 
-typedef uint32_t (*strtoul_t) (const char *, char **, uint32_t base);
+static int send_srec(uint8_t type, uint32_t addr, size_t addr_len, const uint8_t *data, size_t len);
 
-static void dump_dataline(uint32_t addr, const uint8_t *data);
-static void uart_send(const char* data, size_t len);
-
-void
-dump(const char *args)
+void dump_flash(void)
 {
 	UART_t *UART7 = (void *)UART7_START;
-	strtoul_t strtoul = (strtoul_t)(0x3f8c8 + 1);
-	char *end;
-	uint32_t addr;
-	uint32_t n;
-
-	addr = strtoul(args, &end, 16);
-	if (*end != ' ')
-		return;
-
-	n = strtoul(end + 1, &end, 16);
-
-	addr &= ~(0xf);
-	n = (n + 0xf) & ~(0xf);
+	uint8_t *FLASH = (void *)FLASH_START;
+	uint32_t head = 0x48445200;
+	size_t count = 0;
+	size_t i, j;
 
 	uint32_t cr1 = UART7->CR1;
 	UART7->CR1 = cr1 & ~(0x1f0);
 
-	uint8_t *data = (uint8_t *) addr;
-	while (n > 0) {
-		dump_dataline(addr, data);
-
-		addr += 16;
-		data += 16;
-		n -= 16;
+	send_srec(0, 0, 2, (uint8_t *)&head, 4);
+	for (i = 0; i < FLASH_SIZE; i += 32) {
+		send_srec(3, FLASH_START + i, 4, FLASH + i, 32);
+		count++;
 	}
+	send_srec(5, count, 2, NULL, 0);
+	send_srec(7, FLASH_START, 4, NULL, 0);
 
 	while (!(UART7->SR & 0x40))
 		/* wait */;
@@ -92,43 +78,42 @@ static void uart_send(const char* data, size_t len)
 			/* wait */;
 		UART7->DR = data[i];
 	}
-
 	wdg();
 }
 
-static void
-dump_dataline(uint32_t addr, const uint8_t *data)
+static int send_srec(uint8_t type, uint32_t addr, size_t addr_len, const uint8_t *data, size_t len)
 {
-	char buffer[80];
-	char *p = buffer;
-	uint32_t i;
+	char buffer[2 + 2 + 8 + 64 + 2 + 2];
+	char* p = buffer + 2;
+	uint8_t total;
+	uint8_t sum = 0;
+	size_t i;
 
-	byte_to_rec(p, (addr >> 24) & 0xff); p += 2;
-	byte_to_rec(p, (addr >> 16) & 0xff); p += 2;
-	byte_to_rec(p, (addr >> 8) & 0xff); p += 2;
-	byte_to_rec(p, addr & 0xff); p += 2;
-	*p++ = '\t';
-
-	for (i = 0; i < 16; i++) {
-		if (i > 0) {
-			*p++ = ' ';
-			if (i == 8) {
-				*p++ = ' ';
-				*p++ = ' ';
-			}
-		}
-		byte_to_rec(p, data[i]); p += 2;
+	buffer[0] = 'S';
+	buffer[1] = '0' + type;
+	total = addr_len + len + 1;
+	sum += byte_to_rec(p, total);
+	p += 2;
+	switch (addr_len) {
+		case 4:
+			sum += byte_to_rec(p, (addr >> 24) & 0xff);
+			p += 2;
+		case 3:
+			sum += byte_to_rec(p, (addr >> 16) & 0xff);
+			p += 2;
+		default:
+			sum += byte_to_rec(p, (addr >> 8) & 0xff);
+			p += 2;
+			sum += byte_to_rec(p, addr & 0xff);
+			p += 2;
 	}
-	*p++ = '\t';
-
-	for (i = 0; i < 16; i++) {
-		if (i == 8)
-			*p++ = ' ';
-		if (0x1f < data[i] && data[i] < 0x7f)
-			*p++ = data[i];
-		else
-			*p++ = '.';
+	for (i = 0; i < len; i++) {
+		sum += byte_to_rec(p, data[i]);
+		p += 2;
 	}
+	sum ^= 0xff;
+	byte_to_rec(p, sum);
+	p += 2;
 	*p++ = '\r';
 	*p++ = '\n';
 
