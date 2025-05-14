@@ -12,12 +12,12 @@ The tool will overwrite any file present in the current directory if this is con
 
 ## Known firmware images:
 
-- mainware.bin
-- motorware.bin
-- shifterware.bin
-- batteryware.bin
-- bleware.bin
-- bmsboot.bin
+- mainware.bin (MCU: ST STM32F413VGT6)
+- bleware.bin (MCU: TI CC2642R1F)
+- motorware.bin (MCU: TI TMS320F28054F)
+- shifterware.bin (MCU: MindMotion MM32F031F6U6)
+- batteryware.bin (MCU: ST STM32L072CZT6)
+- bmsboot.bin (MCU: see batteryware.bin)
 
 ## Some observations about firmware images:
 
@@ -56,7 +56,6 @@ This tool patches a modern VanMoof mainware file, so the region OFFROAD is not r
 The file given on the command line is overwritten with the patched version of the file, so please make a backup of your mainware before using the tool.
 
 Currently the tool only works for mainware version 1.9.3.
-
 
 ## ble-patch
 
@@ -97,7 +96,6 @@ This can also dump memory (i.e. ROM, internal FLASH, or external FLASH):
 0005afb0        00 00 00 00 ff ff ff ff   55 4b 45 59 68 ee 25 4f       ........ UKEYh.%O
 ```
 
-
 ## patch-dump
 
 This tool patches a modern VanMoof mainware as `patch` above, but adds a function to dump FLASH or memory to the console. This function is patched into the `help` command and will output FLASH or memory as hexdump.  Use as `help <addr> <count>`.
@@ -118,7 +116,6 @@ dd if=vanmoof.bin of=motorware.bin bs=4096 skip=160 count=32
 dd if=vanmoof.bin of=batteryware.bin bs=4096 skip=192 count=32
 dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ```
-
 
 ## Offsets in smart controller internal flash:
 
@@ -159,9 +156,7 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
    + 0x3d3: Power level high bit? (init from 0x316 >> 7)
 ```
 
-
 ## update.py
-
 
 A simple cheasy update tool to send firmware packed with `pack` to the bike. This needs [pymoof](https://github.com/quantsini/pymoof) to run.
 
@@ -169,6 +164,9 @@ You need to insert your bikes API key and manufacturer key before using the tool
 
 Use as a reference for the firmware update over BLE.
 
+## External resources
+
+- [Wiring harness](https://www.moofrepair.nl/wiring-harness/)
 
 ## Fun facts
 
