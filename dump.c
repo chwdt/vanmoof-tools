@@ -22,6 +22,7 @@ typedef struct {
 } UART_t;
 
 typedef uint32_t (*strtoul_t) (const char *, char **, uint32_t base);
+typedef void (*help_t) (void);
 
 static void dump_dataline(uint32_t addr, const uint8_t *data);
 static void uart_send(const char* data, size_t len);
@@ -31,13 +32,16 @@ dump(const char *args)
 {
 	UART_t *UART7 = (void *)UART7_START;
 	strtoul_t strtoul = (strtoul_t)(0x3f8c8 + 1);
+	help_t help = (help_t)(0x35e04 + 1);
 	char *end;
 	uint32_t addr;
 	uint32_t n;
 
 	addr = strtoul(args, &end, 16);
-	if (*end != ' ')
+	if (*end != ' ') {
+		help();
 		return;
+	}
 
 	n = strtoul(end + 1, &end, 16);
 
