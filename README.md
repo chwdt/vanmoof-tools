@@ -164,6 +164,19 @@ You need to insert your bikes API key and manufacturer key before using the tool
 
 Use as a reference for the firmware update over BLE.
 
+## Internal communication
+
+Main MCU communicates with the other MCUs via:
+
+- Main MCU debug: UART7 (port behind rear light)
+- BLE MCU control: UART5 (SSP, SLIP encoded packets)
+- BLE MCU debug: UART8 (passthru in bledebug mode)
+- GSM uBlox G350: USART2 (AT commands, passthru in gsmdebug mode)
+- Battery MCU: UART4 (Modbus)
+- Shifter MCU: USART3 (Modbus)
+- Motor MCU: USART6 (SSP, SLIP encoded packets)
+- Main MCU alternative debug: USART1  (unknown how this is accessed, maybe through GSM?)
+
 ## External resources
 
 - [Wiring harness](https://www.moofrepair.nl/wiring-harness/)
