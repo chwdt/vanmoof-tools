@@ -164,6 +164,14 @@ You need to insert your bikes API key and manufacturer key before using the tool
 
 Use as a reference for the firmware update over BLE.
 
+## read_logs.py
+
+A simple cheasy tool to read the internal debug logs from the bike using BLE. This needs [pymoof](https://github.com/quantsini/pymoof) to run.
+
+You need to insert your bikes API key before using the tool.
+
+Use as a reference howto read logs over BLE.
+
 ## Internal communication
 
 Main MCU communicates with the other MCUs via:
