@@ -180,6 +180,7 @@ Main MCU communicates with the other MCUs via:
 ## External resources
 
 - [Wiring harness](https://www.moofrepair.nl/wiring-harness/)
+- [Debug console](https://www.reddit.com/r/vanmoofbicycle/comments/17744l7/comment/k4z0wyi/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) Login: "%02X%02X%02xDeBug", BLE_MAC[3], BLE_MAC[4], BLE_MAC[5]
 
 ## Fun facts
 
