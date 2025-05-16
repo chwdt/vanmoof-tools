@@ -371,6 +371,9 @@ OK
 
 - [Wiring harness](https://www.moofrepair.nl/wiring-harness/)
 - [Debug console](https://www.reddit.com/r/vanmoofbicycle/comments/17744l7/comment/k4z0wyi/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)
+- [Hardware info](https://github.com/ciborg971/VanmoofX3RE/tree/master/OG)
+- [Hardware info](https://github.com/dtngx/VMBattery)
+- [pymoof](https://github.com/quantsini/pymoof)
 
 ## Fun facts
 
