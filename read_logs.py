@@ -63,12 +63,13 @@ async def read_logs():
                 block.append((offset >> 16) & 0xff)
                 block.append((offset >> 8) & 0xff)
                 block.append(offset & 0xff)
+                block.append(255) # Number of blocks
                 await client._write(Maintenance.LOG_BLOCK, block)
                 result = await client._read(Maintenance.LOG_BLOCK)
                 text = result.decode('ASCII')
                 print(text, end='')
                 log_data += text
-                offset += 1
+                offset += int(len(result) / 16)
             print('')
         except Exception as e:
             print(f'Error reading logs: {e}, last offset {offset}')
