@@ -177,13 +177,28 @@ Use as a reference howto read logs over BLE.
 Main MCU communicates with the other MCUs via:
 
 - Main MCU debug: UART7 (port behind rear light)
-- BLE MCU control: UART5 (SSP, SLIP encoded packets)
+- BLE MCU control: UART5 (SSP, [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets)
 - BLE MCU debug: UART8 (passthru in bledebug mode)
 - GSM uBlox G350: USART2 (AT commands, passthru in gsmdebug mode)
-- Battery MCU: UART4 (Modbus)
-- Shifter MCU: USART3 (Modbus)
-- Motor MCU: USART6 (SSP, SLIP encoded packets)
+- Battery MCU: UART4 ([Modbus](https://en.wikipedia.org/wiki/Modbus))
+- Shifter MCU: USART3 ([Modbus](https://en.wikipedia.org/wiki/Modbus))
+- Motor MCU: USART6 (SSP, [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets)
 - Main MCU alternative debug: USART1  (unknown how this is accessed, maybe through GSM?)
+
+The [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets contain one byte sender address, a command byte, a sequence byte,
+a little endian 16 bit word which is an offset or a function code, a 16 bit data length word, data, and a 16 bit CRC, which is the same as the [Modbus](https://en.wikipedia.org/wiki/Modbus) CRC.
+
+The command byte is 06 for READ, 07 for WRITE, and 05 for ACK packets. The CRC is calculated over the packet without the C0 framing characters.
+
+```
+C0 01 06 56 1A 01 33 F8 C0                              MCU -> BLE READ req 56: 0x011a
+C0 02 05 56 53 6E C0                                    BLE -> MCU ACK 56
+
+C0 02 07 79 1A 01 06 00 F8 8A 5E XX XX XX YY YY C0      BLE -> MCU WRITE req 79: 0x011a: 0x0006 bytes: 0xF8 8A 5E XX XX XX
+C0 01 05 79 E2 B2 C0                                    MCU -> BLE ACK 79
+```
+
+The MCU handles both packet streams from the BLE and the Motor MCU inside the same packet handler, so the offsets/function codes of the BLE and the Motor need to be disjunct.
 
 ## External resources
 
