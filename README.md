@@ -200,10 +200,177 @@ C0 01 05 79 E2 B2 C0                                    MCU -> BLE ACK 79
 
 The MCU handles both packet streams from the BLE and the Motor MCU inside the same packet handler, so the offsets/function codes of the BLE and the Motor need to be disjunct.
 
+## Debug console
+
+The `Login:` prompt on the debug console knows two passwords, one fixed password hardcoded in the firmware and one password containing the last three bytes of the bikes MAC address followed by the word "DeBug", as output by `printf("%02X%02X%02XDeBug", MAC[3], MAC[4], MAC[5])`.
+
+The debug console has a `help` command. The BLE chip and the GSM modem can also be accessed from the debug port, by using the commands `bledebug` and `gsmdebug` respectively.
+
+```
+Login: ***********
+Welcome to ES3
+
+help
+Available commands:
+help              This tekst
+reboot            reboot CPU
+login             Login shell
+logout            Logout shell
+ver               Software version
+distance          Manual set dst
+gear              set gear
+region            Region 0..3
+model             model
+blereset          hard reset BLE
+bledebug          redirect uart8
+show              Parameters
+motorupdate       Update F2806 CPU
+vollow            Audio volume
+volmid            Audio volume
+volhigh           Audio volume
+speed             override speed
+loop              main loop time
+shipping          Shipping mode
+factory-shipping   Factory shipping mode (ignores BMS)
+logprn            Print log
+logclr            Clear log 6
+logapp            1/ 0
+powerchange       1/ 0
+factory           Load factory defaults
+battery           Show battery
+batware           Battery update
+batboot           BatteryBL update
+batreset          Battery reset
+shiftware         Battery update
+shifterstatus     Show shifter
+shiftdebug        Show Modbus
+shiftresetcounter   Reset shift counter
+motorstatus
+gsminfo           Info from Ublox
+gsmstart          start GSM function
+gsmdebug          redirect uart2
+bmsdebug          Show Modbus
+sound             sample,volume,times
+adc               read adc
+bwritereg         Modbus Bat write register
+bwritedata        Modbus Bat write data
+breadreg          Modbus Bat read register
+swritereg         Modbus Shift write register
+swritedata        Modbus Shift write data
+sreadreg          Modbus Shift read register
+stc               read lipo monitor
+stcreset
+setoad            test
+setgear           save muco shifter
+soc               overrule soc
+customsoc         sound soc
+hwrev             hardware revision
+error             set errorcode
+
+ver
+ES3.0 Main  1.09.03 (10:30:52 Apr 30 2025)
+ES3 boot    1.9
+Motorware   S.0.00.22
+BMSWare     BL:007 FW:1.17 RSOC:100 Cycles:42 HW:3.10 ESN:XXXXXXXXXXXXXX
+Shifterware 0.237 stored: 0.237
+BLEWare     1.4.01
+GSMWare     08.90
+CMD_BLE_MAC F8:8A:5E:XX:XX:XX
+```
+
+The BLE console also has a `help` command and one can return to the MCU console with the command `exit`.
+
+```
+Login: ***********
+Welcome to ES3
+bledebug
+Connect to UART8
+
+> help
+The following commands are available:
+
+    firmware-update                   - update a new image of firmware to the external flash
+    extflash-verify                   - verify the current flashchip
+    log-count                         - get log-count statistic
+    log-dump <start-index> <n>        - print <n> blocks starting at address <start-index>
+    log-flush                         - flush all log-entries
+    log-inject <n>                    - Create <n> fake-logs
+    audio-play <index>                - play audio bound to the specified index
+    audio-stop                        - stop playing the current audio file
+    audio-dump                        - dump all audio files in external memory
+    audio-upload <index>              - upload audio binary using Y-Modem at the address linked to the specified index
+    audio-volume-set-all <level>      - set audio level of all audio-clips (0-3)
+    pack-upload                       - upload a PACK file by Y-Modem
+    pack-list                         - list the contents of a PACK file
+    pack-delete                       - delete a PACK file
+    pack-process                      - process pack files in external flash memory
+    ble-info                          - dump current BLE connection info / statistics
+    ble-disconnect                    - force a disconnect of all connected devices
+    ble-erase-all-bonds               - erase all bonds
+    shutdown                          - shutdown the system
+    rtos-statistics                   - dump memory stats every 500ms
+    rtos-nvm-compact                  - Compact the non-volatile storage
+    dump                              - dump keys/memory/extflash
+    info/ver                          - show basic firmware info
+    exit                              - exit from shell
+    help                              - show all monitor commands
+
+> info
+BLE MAC Address: "f8:8a:5e:xx:xx:xx"
+
+Device name ................ : ES3-F88A5EXXXXXX
+Firmware version ........... : 1.04.01
+Compile date / time ........ : May 12 2025 / 09:03:35
+BIM firmware version ....... : 1.00.00
+BIM compile date / time .... : Apr 23 2020 / 14:10:12
+reset type ................. : pin reset
+systick .................... : -117259002
+
+> exit
+```
+
+The GSM console talks extended ublox [AT](https://en.wikipedia.org/wiki/Hayes_AT_command_set) commands. It can be exited with the sequence `<ESC>[14~`.
+
+```
+Login: ***********
+Welcome to ES3
+gsmdebug
+Modem powering on..
+
+ATI
+SARA-G350-02S-01
+
+OK
+AT+UGSRV?
++UGSRV: "ublox1.vanmoof.com","ublox1.vanmoof.com","PBNjh0V46Eev8CcfS4LPJg",14,4,1,65,0,15
+
+OK
+AT+UPSDA=0,3
+OK
+AT+UPSND=0,8
++UPSND: 0,8,1
+
+OK
+AT+ULOCIND=1
+OK
+AT+ULOC=2,2,1,180,1,10
+OK
+
++UULOCIND: 0,0
+
++UULOCIND: 1,0
+
++UULOCIND: 2,0
+
++UULOCIND: 3,0
+
++UULOC: 16/05/2025,08:27:54.000,<latitude>,<longitude>,0,601,0,0,0,2,0,0,0
+```
+
 ## External resources
 
 - [Wiring harness](https://www.moofrepair.nl/wiring-harness/)
-- [Debug console](https://www.reddit.com/r/vanmoofbicycle/comments/17744l7/comment/k4z0wyi/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) Login: "%02X%02X%02xDeBug", BLE_MAC[3], BLE_MAC[4], BLE_MAC[5]
+- [Debug console](https://www.reddit.com/r/vanmoofbicycle/comments/17744l7/comment/k4z0wyi/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)
 
 ## Fun facts
 
