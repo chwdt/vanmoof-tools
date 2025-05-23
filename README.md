@@ -158,6 +158,13 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
    + 0x3d3: Power level high bit? (init from 0x316 >> 7)
 ```
 
+## Offsets in BLE controller internal SRAM:
+
+```
+2000a3dc: Memory location of UKEY, when used in BLE protocol
+2000a3fc: Memory location of MKEY, when used in BLE protocol
+```
+
 ## update.py
 
 A simple cheasy update tool to send firmware packed with `pack` to the bike. This needs [pymoof](https://github.com/quantsini/pymoof) to run.
@@ -383,6 +390,14 @@ OK
 - [Tobias](https://github.com/Knight1)
 - [Quinten](https://github.com/quintenadema)
 
+
+## Help needed
+
+If you want to support these efforts, please contact me with your offer. I could really use a smart cartridge to hook up a debugger to the TI bluetooth controller and debug some ideas I have...
+
+I see a crash of the controller when sending firmware update packets > 256 bytes, so there might be the chance to use this as an exploit to read out the MKEY over bluetooth. We need the MKEY to be able to:
+- decode the update packages received from Vanmoof
+- send our own update package (patched with features like offroad) to the bike
 
 ## Fun facts
 
