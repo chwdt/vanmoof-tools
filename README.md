@@ -375,6 +375,13 @@ OK
 - [Hardware info](https://github.com/dtngx/VMBattery)
 - [pymoof](https://github.com/quantsini/pymoof)
 
+
+## Special thanks!
+
+- [Tobias](https://github.com/Knight1)
+- [Quinten](https://github.com/quintenadema)
+
+
 ## Fun facts
 
 The magic numbers used by VanMoof have been used previously by others, this gives some funny output when using the unix `file` command:
