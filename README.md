@@ -211,7 +211,7 @@ The MCU handles both packet streams from the BLE and the Motor MCU inside the sa
 
 ## Debug console
 
-The `Login:` prompt on the debug console knows two passwords, one fixed password hardcoded in the firmware and one password containing the last three bytes of the bikes MAC address followed by the word "DeBug", as output by `printf("%02X%02X%02XDeBug", MAC[3], MAC[4], MAC[5])`.
+The `Login:` prompt on the debug console knows two passwords, one fixed password hardcoded in the firmware `vEVjGF!paYsM2EBV8SoDT8*T0eB&#T6xevaoxCaO` and one password containing the last three bytes of the bikes MAC address followed by the word "DeBug", as output by `printf("%02X%02X%02XDeBug", MAC[3], MAC[4], MAC[5])`.
 
 The debug console has a `help` command. The BLE chip and the GSM modem can also be accessed from the debug port, by using the commands `bledebug` and `gsmdebug` respectively.
 
