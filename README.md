@@ -158,6 +158,33 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
    + 0x3d3: Power level high bit? (init from 0x316 >> 7)
 ```
 
+## Offsets in BLE controller internal ROM:
+
+```
+10000000: TI ROM boot loader
+10007000: TI ROM ble5stack
+1002b400: TI ROM tirtos7
+
+50001000: FCFG1
+500012e8: FCFG1::MAC_BLE_0
+500012ec: FCFG1::MAC_BLE_1
+
+50003000: CCFG (mirrored from FLASH 56000)
+```
+
+## Offsets in BLE controller internal FLASH:
+
+```
+00000000: bleware.bin
+
+00056000: boot loader
+00057f38: boot loader version: "BVERApr 23 2020"
+00057f48: boot loader version: "14:10:12"
+
+00057fa8: CCFG (Customer configuration) Mirrored at CCFG 50004fa8
+00057fec: CCFG::IMAGE_VALID_CONF -> 56000 (boot loader entry)
+```
+
 ## Offsets in BLE controller internal SRAM:
 
 ```
