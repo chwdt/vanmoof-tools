@@ -23,15 +23,25 @@ usage(void)
 	exit(1);
 }
 
-static const uint16_t exp_offset_reset[] = {
-	0xd8e5, 0x0001,
+static const uint16_t exp_full_debug[] = {
+	0xf440,
+	0x7040,
 };
 
-static const uint16_t rpl_offset_reset[] = {
+static const uint16_t rpl_full_debug[] = {
+	0xf240,
+	0x30ff,
+};
+
+static const uint16_t exp_offset_rtos_stat[] = {
+	0xf6a1, 0x0000,
+};
+
+static const uint16_t rpl_offset_rtos_stat[] = {
 	0xc67d, 0x0002,
 };
 
-static const uint16_t rpl_keys_dump[] = {
+static const uint16_t rpl_dump[] = {
 #include "keys.hex"
 };
 
@@ -53,20 +63,28 @@ typedef struct {
 
 #define N_ARRAY(a) (sizeof(a) / sizeof(a[0]))
 
-static const patch_t patch_offset_reset = {
-	"offset keys-dump",
-	0x2a110,
-	N_ARRAY(rpl_offset_reset),
-	exp_offset_reset,
-	rpl_offset_reset,
+static const patch_t patch_full_debug = {
+	"enable debug",
+	0x1cfda,
+	N_ARRAY(rpl_full_debug),
+	exp_full_debug,
+	rpl_full_debug,
 };
 
-static const patch_t patch_keys_dump = {
-	"keys_dump",
+static const patch_t patch_offset_rtos_stat = {
+	"offset dump",
+	0x2a108,
+	N_ARRAY(rpl_offset_rtos_stat),
+	exp_offset_rtos_stat,
+	rpl_offset_rtos_stat,
+};
+
+static const patch_t patch_dump = {
+	"dump",
 	0x2c67c,
-	N_ARRAY(rpl_keys_dump),
+	N_ARRAY(rpl_dump),
 	NULL,
-	rpl_keys_dump,
+	rpl_dump,
 };
 
 static const patch_t patch_date_time = {
@@ -78,8 +96,9 @@ static const patch_t patch_date_time = {
 };
 
 static const patch_t *patches_1_4_1[] = {
-	&patch_offset_reset,
-	&patch_keys_dump,
+	&patch_offset_rtos_stat,
+	&patch_full_debug,
+	&patch_dump,
 	&patch_date_time,
 };
 
@@ -212,7 +231,7 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
-	size_t add_len = sizeof(rpl_keys_dump);
+	size_t add_len = sizeof(rpl_dump);
 
 	void *data = mmap(NULL, st.st_size + add_len, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	if (data == (void *)-1) {

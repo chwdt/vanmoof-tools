@@ -9,6 +9,7 @@ typedef uint32_t size_t;
 #define SSCANF (0x23838 + 1)
 
 #define WDT 0x40080000
+#define JTAGCFG 0x40090034
 
 typedef struct {
 	__volatile__ uint32_t LOAD;
@@ -46,9 +47,12 @@ dump(int what, char *cmdline)
 	static const char text[] = "dump keys/memory/extflash";
 	static const char file[] = __FILE__;
 	show_help_t show_help = (show_help_t)SHOW_HELP;
+	uint32_t *jtagcfg = (uint32_t*)JTAGCFG;
+	logger_t logger = (logger_t)LOGGER;
 
 	switch (what) {
 	case 0:
+		*jtagcfg = 0x100 | 0x6f;
 		show_help("dump", text);
 		return 0;
 
