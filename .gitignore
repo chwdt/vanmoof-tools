@@ -6,5 +6,7 @@ patch
 patch-dump
 ble-patch
 keys
+keys1
+keys2
 *.bin
 *.hex

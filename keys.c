@@ -2,11 +2,21 @@ typedef unsigned char uint8_t;
 typedef unsigned int uint32_t;
 typedef uint32_t size_t;
 
+#ifdef VERSION_1_4_1
 #define LOGGER (0x6d90 + 1)
 #define READ_EXTFLASH (0x1c5a4 + 1)
 #define GET_KEY (0x20bb8 + 1)
 #define SHOW_HELP (0x21244 + 1)
 #define SSCANF (0x23838 + 1)
+#endif
+
+#ifdef VERSION_2_4_1
+#define LOGGER (0x7714 + 1)
+#define READ_EXTFLASH (0x21640 + 1)
+#define GET_KEY (0x26ea2 + 1)
+#define SHOW_HELP (0x27744 + 1)
+#define SSCANF (0x2a670 + 1)
+#endif
 
 #define WDT 0x40080000
 #define JTAGCFG 0x40090034

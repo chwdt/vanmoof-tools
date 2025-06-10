@@ -19,7 +19,7 @@ pack.o: pack.c pack.h
 unpack.o: unpack.c pack.h
 crc32.o: crc32.c ware.h
 patch.o: patch.c ware.h
-ble-patch.o: ble-patch.c ware.h keys.hex
+ble-patch.o: ble-patch.c ware.h keys1.hex keys2.hex
 
 patch-dump.o: patch.c ware.h dump.hex
 	$(CC) $(CFLAGS) -DDUMP -o $@ -c $<
@@ -33,17 +33,29 @@ dump.bin: dump.o
 dump.o: dump.c
 	arm-none-eabi-gcc $(ARM_FLAGS) -c $<
 
-keys.hex: keys.bin
+keys1.hex: keys1.bin
 	od -v -An -tx2 $< | sed -e 's/\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\)/0x\1,/g' >$@
 
-keys.bin: keys
+keys2.hex: keys2.bin
+	od -v -An -tx2 $< | sed -e 's/\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\)/0x\1,/g' >$@
+
+keys1.bin: keys1
 	arm-none-eabi-objcopy -O binary $< $@
 
-keys: keys.o keys.ld
-	arm-none-eabi-ld -T keys.ld -e dump -o $@ $<
+keys2.bin: keys2
+	arm-none-eabi-objcopy -O binary $< $@
 
-keys.o: keys.c
-	arm-none-eabi-gcc $(ARM_FLAGS) -c $<
+keys1: keys1.o keys1.ld
+	arm-none-eabi-ld -T keys1.ld -e dump -o $@ $<
+
+keys2: keys2.o keys2.ld
+	arm-none-eabi-ld -T keys2.ld -e dump -o $@ $<
+
+keys1.o: keys.c
+	arm-none-eabi-gcc $(ARM_FLAGS) -DVERSION_1_4_1 -c $< -o $@
+
+keys2.o: keys.c
+	arm-none-eabi-gcc $(ARM_FLAGS) -DVERSION_2_4_1 -c $< -o $@
 
 clean:
 	rm -f *.o unpack crc32 patch patch-dump
