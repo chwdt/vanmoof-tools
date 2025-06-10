@@ -188,8 +188,11 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ## Offsets in BLE controller internal SRAM:
 
 ```
-2000a3dc: Memory location of UKEY, when used in BLE protocol
-2000a3fc: Memory location of MKEY, when used in BLE protocol
+2000a3dc: Memory location of UKEY, when used in BLE protocol (1.4.1)
+2000a3fc: Memory location of MKEY, when used in BLE protocol (1.4.1)
+
+2000cec8: Memory location of UKEY, when used in BLE protocol (2.4.1)
+2000cee8: Memory location of MKEY, when used in BLE protocol (2.4.1)
 ```
 
 ## update.py
