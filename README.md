@@ -61,7 +61,7 @@ Currently the tool only works for mainware version 1.9.3.
 
 usage: `ble-patch <bleware>`
 
-This tool patches the VanMoof bleware file, so the command `reset` is replaced with a command `dump`. Using `dump keys` inside the bledebug console will show the stored keys. These keys are two factory default keys used during bringup of the bike in factory, your API key, and the VanMoof manufacturer key. The latter is used to encrypt firmware images (when sending updates to the APP).
+This tool patches the VanMoof bleware file, so the command `rtos-statistics` is replaced with a command `dump`. Using `dump keys` inside the bledebug console will show the stored keys. These keys are two factory default keys used during bringup of the bike in factory, your API key, and the VanMoof manufacturer key. The latter is used to encrypt firmware images (when sending updates to the APP).
 
 You can update the patched bleware on the bike by creating a pack containing this bleware and using the command `pack-upload` inside the bledebug console. You need to send the created pack using ymodem.
 
