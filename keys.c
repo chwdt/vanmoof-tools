@@ -51,18 +51,18 @@ static int dump_keys(const char *args);
 static int dump_mem(const char *args);
 static int dump_extflash(const char *args);
 
+static int patch_ble_boot(const char *args);
+
 int
 dump(int what, char *cmdline)
 {
 	static const char text[] = "dump keys/memory/extflash";
 	static const char file[] = __FILE__;
 	show_help_t show_help = (show_help_t)SHOW_HELP;
-	uint32_t *jtagcfg = (uint32_t*)JTAGCFG;
 	logger_t logger = (logger_t)LOGGER;
 
 	switch (what) {
 	case 0:
-		*jtagcfg = 0x100 | 0x6f;
 		show_help("dump", text);
 		return 0;
 
@@ -85,6 +85,9 @@ dump(int what, char *cmdline)
 
 			if (strncmp(args, "extflash", 8) == 0)
 				return dump_extflash(args);
+
+			if (strncmp(args, "ccfg", 4) == 0)
+				return patch_ble_boot(args);
 		}
 
 		return usage("dump", "<keys|mem|extflash>");
@@ -228,6 +231,158 @@ dump_extflash(const char *args)
 	}
 
 	return 0;
+}
+
+typedef void (*flash_init_t) (void);
+
+#define FLASH_INIT (0x57000 + 1)
+
+#define ROM_API_TABLE		((uint32_t *) 0x10000180)
+
+#define ROM_API_FLASH_TABLE	((uint32_t*) (ROM_API_TABLE[10]))
+#define ROM_API_VIMS_TABLE	((uint32_t*) (ROM_API_TABLE[22]))
+
+#define ROM_FlashSectorErase \
+    ((uint32_t (*)(uint32_t ui32SectorAddress)) \
+    ROM_API_FLASH_TABLE[5])
+
+#define ROM_FlashProgram \
+    ((uint32_t (*)(uint8_t *pui8DataBuffer, uint32_t ui32Address, uint32_t ui32Count)) \
+    ROM_API_FLASH_TABLE[6])
+
+#define FLASH_FCFG_B0_SSIZE0 0x40032430
+
+#define ROM_VIMSModeSet \
+    ((void (*)(uint32_t ui32Base, uint32_t ui32Mode)) \
+    ROM_API_VIMS_TABLE[1])
+
+#define ROM_VIMSModeGet \
+    ((uint32_t (*)(uint32_t ui32Base)) \
+    ROM_API_VIMS_TABLE[2])
+
+#define VIMS 0x40034000
+
+static uint32_t vims_enable(void)
+{
+	uint32_t mode = ROM_VIMSModeGet(VIMS) & 0xff;
+	if (mode != 0) {
+		ROM_VIMSModeSet(VIMS, 0);
+		while (ROM_VIMSModeGet(VIMS) != 0)
+			/* wait */;
+	}
+	return mode;
+}
+
+static uint32_t vims_mode_set(uint32_t mode)
+{
+	if (mode != 0) {
+		ROM_VIMSModeSet(VIMS, 1);
+	}
+}
+
+static int flash_sector_erase(uint32_t address)
+{
+	uint32_t mode = vims_enable();
+	int res = ROM_FlashSectorErase(address);
+	vims_mode_set(mode);
+	return res;
+}
+
+static int flash_program(uint8_t *data, uint32_t address, size_t len)
+{
+	uint32_t mode = vims_enable();
+	int res = ROM_FlashProgram(data, address, len);
+	vims_mode_set(mode);
+	return res;
+}
+
+#define CCFG_BASE 0x57f00
+#define CCFG_BIM_DATE 0x3c
+#define CCFG_BIM_TIME 0x48
+#define CCFG_TI_OPTIONS 0xe0
+#define CCFG_TAP_DAP_0 0xe4
+#define CCFG_TAP_DAP_1 0xe8
+
+// 012345678901 23456789
+// Jun 16 2025  14:53:15
+
+static void *memcpy(void *dst, const void *src, size_t len);
+
+static int patch_ble_boot(const char* args)
+{
+	uint32_t* pTIOptions = (uint32_t *)(CCFG_BASE + CCFG_TI_OPTIONS);
+	uint32_t* pTapDap0 = (uint32_t *)(CCFG_BASE + CCFG_TAP_DAP_0);
+	uint32_t* pTapDap1 = (uint32_t *)(CCFG_BASE + CCFG_TAP_DAP_1);
+	uint32_t *jtagcfg = (uint32_t*)JTAGCFG;
+	logger_t logger = (logger_t)LOGGER;
+	flash_init_t flash_init = (flash_init_t)FLASH_INIT;
+	uint32_t sector_size;
+	uint32_t last_sector = 0x56000;
+	uint32_t tmp_dst = 0x46000;
+	uint8_t data[256];
+	uint32_t src_addr;
+	uint32_t dst_addr;
+	uint32_t total;
+
+	logger(__FILE__, __LINE__, __FUNCTION__, 9, "CCFG_TI_OPTIONS: 0x%08x", *pTIOptions);
+	logger(__FILE__, __LINE__, __FUNCTION__, 9, "CCFG_TAP_DAP_0:  0x%08x", *pTapDap0);
+	logger(__FILE__, __LINE__, __FUNCTION__, 9, "CCFG_TAP_DAP_1:  0x%08x", *pTapDap1);
+	logger(__FILE__, __LINE__, __FUNCTION__, 9, "JTAGCFG:         0x%08x", *jtagcfg);
+
+	if ((*pTIOptions == 0xffffffc5) && (*pTapDap0 == 0xffc5c5c5) && (*pTapDap1 == 0xffc5c5c5)) {
+		return 0;
+	}
+
+	sector_size = (*(uint32_t *)FLASH_FCFG_B0_SSIZE0 & 0x0f) << 10;
+	logger(__FILE__, __LINE__, __FUNCTION__, 9, "flash_sector_size: 0x%08x", sector_size);
+
+	src_addr = last_sector;
+	dst_addr = tmp_dst;
+	total = sector_size;
+
+	flash_sector_erase(dst_addr);
+
+	while (total) {
+		memcpy(data, (void*)src_addr, sizeof(data));
+
+		if (total == sizeof(data)) {
+			*(uint32_t *)(data + CCFG_TI_OPTIONS) = 0xffffffc5;
+			*(uint32_t *)(data + CCFG_TAP_DAP_0) = 0xffc5c5c5;
+			*(uint32_t *)(data + CCFG_TAP_DAP_1) = 0xffc5c5c5;
+			strcpy(data + CCFG_BIM_DATE, "Jun 16 2025");
+			strcpy(data + CCFG_BIM_TIME, "13:12:42");
+		}
+
+		flash_program(data, dst_addr, sizeof(data));
+		src_addr += sizeof(data);
+		dst_addr += sizeof(data);
+		total -= sizeof(data);
+	}
+
+	src_addr = tmp_dst;
+	dst_addr = last_sector;
+	total = sector_size;
+
+	flash_sector_erase(dst_addr);
+
+	while (total) {
+		flash_program((uint8_t*)src_addr, dst_addr, sizeof(data));
+		src_addr += sizeof(data);
+		dst_addr += sizeof(data);
+		total -= sizeof(data);
+	}
+
+	return 0;
+}
+
+static void *
+memcpy(void *dst, const void *src, size_t len)
+{
+	uint8_t *d = dst;
+	const uint8_t *s = src;
+	while (len--)
+		*d++ = *s++;
+	return dst;
 }
 
 static void
