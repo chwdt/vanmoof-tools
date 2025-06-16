@@ -98,6 +98,28 @@ This can also dump memory (i.e. ROM, internal FLASH, or external FLASH):
 0005afb0        00 00 00 00 ff ff ff ff   55 4b 45 59 68 ee 25 4f       ........ UKEYh.%O
 ```
 
+There is a special command which shows the values of `CCFG_TI_OPTIONS` and `CCFG_TAP_DAP_*`, this command will patch to boot loader of the BLE chip to enable the JTAG debug port of the BLE chip for further debugging. The first time the command is called, it will output values like:
+
+```
+> dump ccfg
+CCFG_TI_OPTIONS: 0xffffff00
+CCFG_TAP_DAP_0:  0xff000000
+CCFG_TAP_DAP_1:  0xff000000
+JTAGCFG:         0x00000000
+```
+
+When these values are found, the last sector of flash (including the CCFG) is copied down from 0x56000 to 0x46000 while patching the CCFG values and the version string, and then copying the sector back to 0x56000. After a `reset` these new CCFG values take effect and the JTAG port is enabled:
+
+```
+> dump ccfg
+CCFG_TI_OPTIONS: 0xffffffc5
+CCFG_TAP_DAP_0:  0xffc5c5c5
+CCFG_TAP_DAP_1:  0xffc5c5c5
+JTAGCFG:         0x00000003
+```
+
+The boot loader is not touched again once these CCFG values are present.
+
 ## patch-dump
 
 This tool patches a modern VanMoof mainware as `patch` above, but adds a function to dump FLASH or memory to the console. This function is patched into the `help` command and will output FLASH or memory as hexdump.  Use as `help <addr> <count>`.
