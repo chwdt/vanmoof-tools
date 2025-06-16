@@ -233,10 +233,6 @@ dump_extflash(const char *args)
 	return 0;
 }
 
-typedef void (*flash_init_t) (void);
-
-#define FLASH_INIT (0x57000 + 1)
-
 #define ROM_API_TABLE		((uint32_t *) 0x10000180)
 
 #define ROM_API_FLASH_TABLE	((uint32_t*) (ROM_API_TABLE[10]))
@@ -315,7 +311,6 @@ static int patch_ble_boot(const char* args)
 	uint32_t* pTapDap1 = (uint32_t *)(CCFG_BASE + CCFG_TAP_DAP_1);
 	uint32_t *jtagcfg = (uint32_t*)JTAGCFG;
 	logger_t logger = (logger_t)LOGGER;
-	flash_init_t flash_init = (flash_init_t)FLASH_INIT;
 	uint32_t sector_size;
 	uint32_t last_sector = 0x56000;
 	uint32_t tmp_dst = 0x46000;
