@@ -272,9 +272,9 @@ The bluetooth service `@5505` contains backoffice messages, these are used to co
 
 The decrypted message is build up like this (format 1):
 
-| M-ID | Cmd | Len | UKEY data | Index | Perms | ... | UKEY data | Index | Perms | Modbus CRC | Padding |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| 00000008 | 0001 | 48 | 98d29703b832207ed7c67b34edfadc02 | 00000002 | 000001f4 | ... | cb27c40df508b19df62e7551127abe79 | 00000004 | 000001f4 | xxxx | 07070707070707 |
+| M-ID | Cmd | Len | UKEY data | Index | Perms | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| 00000008 | 0001 | 18 | 98d29703b832207ed7c67b34edfadc02 | 00000002 | 000001f4 | 6845 | 0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f |
 
 Message format 2:
 
@@ -296,9 +296,9 @@ Message format 4:
 
 Message format 5:
 
-| M-ID | Cmd | Len | Modbus CRC | Padding |
-| :-- | :-- | :-- | :-- | :-- |
-| 00000003 | 0007 | 00 | 6c18 | 090909090909090909 |
+| M-ID | Cmd | Len | UKEY data | Index | Perms | ... | UKEY data | Index | Perms | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| 00000008 | 0001 | 48 | 98d29703b832207ed7c67b34edfadc02 | 00000002 | 000001f4 | ... | cb27c40df508b19df62e7551127abe79 | 00000004 | 000001f4 | xxxx | 07070707070707 |
 
 Message format 6:
 
