@@ -267,9 +267,14 @@ The MCU handles both packet streams from the BLE and the Motor MCU inside the sa
 The bluetooth service `@5505` contains backoffice messages, these are used to configure UKEYs or MKEYs on the bike, for example for bike sharing or workshop access. These messages are encrypted using the bikes MKEY. The messages are prefixed with a two byte nonce, the byte `0x01` and an offset byte. These 4 bytes are not encrypted. The message continues with n * 16 bytes MKEY encrypted data.
 
 | Nonce | Const `0x01` | Offset | Encrypted backoffice message |
-| -- | -- | -- | -- |
+| :-- | :-- | :-- | :-- |
 | `a12d` | `01` | `00` | `acc3d0f327c70f5a4755185bcb27c40df508b19df62e7551127abe79c9c822326adef001d97d51b45f8c58a7d2cc0cc0` |
 
+The decrypted message is build up like this (for example):
+
+| M-ID | Cmd | Len | UKEY data | Index | Perms | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| 00000008 | 0001 | 18 | 98d29703b832207ed7c67b34edfadc02 | 00000002 | 000001f4 | 6845 | 0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f |
 
 ## Debug console
 
