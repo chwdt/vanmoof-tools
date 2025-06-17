@@ -261,6 +261,16 @@ C0 01 05 79 E2 B2 C0                                    MCU -> BLE ACK 79
 
 The MCU handles both packet streams from the BLE and the Motor MCU inside the same packet handler, so the offsets/function codes of the BLE and the Motor need to be disjunct.
 
+
+## BLE service `6acc5505-e631-4069-944d-b8ca7598ad50`
+
+The bluetooth service `@5505` contains backoffice messages, these are used to configure UKEYs or MKEYs on the bike, for example for bike sharing or workshop access. These messages are encrypted using the bikes MKEY. The messages are prefixed with a two byte nonce, the byte `0x01` and an offset byte. These 4 bytes are not encrypted. The message continues with n * 16 bytes MKEY encrypted data.
+
+| Nonce | Const `0x01` | Offset | Encrypted backoffice message |
+| -- | -- | -- | -- |
+| `a12d` | `01` | `00` | `acc3d0f327c70f5a4755185bcb27c40df508b19df62e7551127abe79c9c822326adef001d97d51b45f8c58a7d2cc0cc0` |
+
+
 ## Debug console
 
 The `Login:` prompt on the debug console knows two passwords, one fixed password hardcoded in the firmware `vEVjGF!paYsM2EBV8SoDT8*T0eB&#T6xevaoxCaO` and one password containing the last three bytes of the bikes MAC address followed by the word "DeBug", as output by `printf("%02X%02X%02XDeBug", MAC[3], MAC[4], MAC[5])`.
