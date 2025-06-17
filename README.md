@@ -266,15 +266,60 @@ The MCU handles both packet streams from the BLE and the Motor MCU inside the sa
 
 The bluetooth service `@5505` contains backoffice messages, these are used to configure UKEYs or MKEYs on the bike, for example for bike sharing or workshop access. These messages are encrypted using the bikes MKEY. The messages are prefixed with a two byte nonce, the byte `0x01` and an offset byte. These 4 bytes are not encrypted. The message continues with n * 16 bytes MKEY encrypted data.
 
-| Nonce | Const `0x01` | Offset | Encrypted backoffice message |
+| Nonce | Const 1 | Offset | Encrypted backoffice message |
 | :-- | :-- | :-- | :-- |
-| `a12d` | `01` | `00` | `acc3d0f327c70f5a4755185bcb27c40df508b19df62e7551127abe79c9c822326adef001d97d51b45f8c58a7d2cc0cc0` |
+| a12d | 01 | 00 | acc3d0f327c70f5a4755185bcb27c40df508b19df62e7551127abe79c9c822326adef001d97d51b45f8c58a7d2cc0cc0 |
 
-The decrypted message is build up like this (for example):
+The decrypted message is build up like this (format 1):
 
-| M-ID | Cmd | Len | UKEY data | Index | Perms | Modbus CRC | Padding |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| 00000008 | 0001 | 18 | 98d29703b832207ed7c67b34edfadc02 | 00000002 | 000001f4 | 6845 | 0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f |
+| M-ID | Cmd | Len | UKEY data | Index | Perms | ... | UKEY data | Index | Perms | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| 00000008 | 0001 | 48 | 98d29703b832207ed7c67b34edfadc02 | 00000002 | 000001f4 | ... | cb27c40df508b19df62e7551127abe79 | 00000004 | 000001f4 | xxxx | 07070707070707 |
+
+Message format 2:
+
+| M-ID | Cmd | Len | Index | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| 00000004 | 0003 | 04 | 00000002 | 2577 | 0505050505 |
+
+Message format 3:
+
+| M-ID | Cmd | Len | State | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| 00000007 | 0005 | 01 | 00 | 5ae4 | 0808080808080808 |
+
+Message format 4:
+
+| M-ID | Cmd | Len | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- |
+| 00000005 | 0006 | 00 | 6c18 | 090909090909090909 |
+
+Message format 5:
+
+| M-ID | Cmd | Len | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- |
+| 00000003 | 0007 | 00 | 6c18 | 090909090909090909 |
+
+Message format 6:
+
+| M-ID | Cmd | Len | Unknown1 | Unknown2 | Modbus CRC | Padding |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| 00000004 | 0008 | 03 | xxxx | yy | zzzz | 04040404 |
+
+The possible Cmd values are:
+
+| Cmd | Message (format) |
+| :-- | :-- |
+| 0001 | Update UKEY (1) |
+| 0002 | Update MKEY (1) |
+| 0003 | Erase key by index (2) |
+| 0004 | Nothing (always succeed) |
+| 0005 | Set Module State `@5562` (3) |
+| 0006 | Erase all keys (4) |
+| 0007 | Update multiple keys (5) |
+| 0008 | Unknown, read keys? (6) |
+| 0009 | Unknown, FMNA related |
+| 000a | Unknown, FMNA related |
 
 ## Debug console
 
