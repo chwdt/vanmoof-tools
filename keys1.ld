@@ -12,6 +12,6 @@ SECTIONS
         .text :
         {
                 *(.text)
-                *(.rodata)
+                *(.rodata*)
         } > free_rom = 0xff
 }
