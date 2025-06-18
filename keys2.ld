@@ -4,7 +4,7 @@ ENTRY(_start)
 
 MEMORY
 {
-        free_rom        : ORIGIN = 0x3567c, LENGTH = 0x1000
+        free_rom        : ORIGIN = 0x3531c, LENGTH = 0x1000
 }
 
 SECTIONS
@@ -12,6 +12,6 @@ SECTIONS
         .text :
         {
                 *(.text)
-                *(.rodata)
+                *(.rodata*)
         } > free_rom = 0xff
 }
