@@ -236,6 +236,7 @@ dump_extflash(const char *args)
 #define ROM_API_TABLE		((uint32_t *) 0x10000180)
 
 #define ROM_API_FLASH_TABLE	((uint32_t*) (ROM_API_TABLE[10]))
+#define ROM_API_UART_TABLE	((uint32_t*) (ROM_API_TABLE[20]))
 #define ROM_API_VIMS_TABLE	((uint32_t*) (ROM_API_TABLE[22]))
 
 #define ROM_FlashSectorErase \
@@ -247,6 +248,12 @@ dump_extflash(const char *args)
     ROM_API_FLASH_TABLE[6])
 
 #define FLASH_FCFG_B0_SSIZE0 0x40032430
+
+#define ROM_UARTCharPut \
+    ((void (*)(uint32_t ui32Base, uint8_t ui8Data)) \
+    ROM_API_UART_TABLE[7])
+
+#define UART1 0x40000b00
 
 #define ROM_VIMSModeSet \
     ((void (*)(uint32_t ui32Base, uint32_t ui32Mode)) \
@@ -299,17 +306,14 @@ static int flash_program(uint8_t *data, uint32_t address, size_t len)
 #define CCFG_TAP_DAP_0 0xe4
 #define CCFG_TAP_DAP_1 0xe8
 
-// 012345678901 23456789
-// Jun 16 2025  14:53:15
-
 static void *memcpy(void *dst, const void *src, size_t len);
 
 static int patch_ble_boot(const char* args)
 {
-	uint32_t* pTIOptions = (uint32_t *)(CCFG_BASE + CCFG_TI_OPTIONS);
-	uint32_t* pTapDap0 = (uint32_t *)(CCFG_BASE + CCFG_TAP_DAP_0);
-	uint32_t* pTapDap1 = (uint32_t *)(CCFG_BASE + CCFG_TAP_DAP_1);
-	uint32_t *jtagcfg = (uint32_t*)JTAGCFG;
+	uint32_t *pTIOptions = (uint32_t *)(CCFG_BASE + CCFG_TI_OPTIONS);
+	uint32_t *pTapDap0 = (uint32_t *)(CCFG_BASE + CCFG_TAP_DAP_0);
+	uint32_t *pTapDap1 = (uint32_t *)(CCFG_BASE + CCFG_TAP_DAP_1);
+	uint32_t *jtagcfg = (uint32_t *)JTAGCFG;
 	logger_t logger = (logger_t)LOGGER;
 	uint32_t sector_size;
 	uint32_t last_sector = 0x56000;
@@ -329,7 +333,7 @@ static int patch_ble_boot(const char* args)
 	}
 
 	sector_size = (*(uint32_t *)FLASH_FCFG_B0_SSIZE0 & 0x0f) << 10;
-	logger(__FILE__, __LINE__, __FUNCTION__, 9, "flash_sector_size: 0x%08x", sector_size);
+	logger(__FILE__, __LINE__, __FUNCTION__, 9, "Patch CCFG ... sector_size: %u", sector_size);
 
 	src_addr = last_sector;
 	dst_addr = tmp_dst;
@@ -406,4 +410,10 @@ strncmp(const char *s1, const char *s2, size_t n)
 		s2++;
 	}
 	return *s1 - *s2;
+}
+
+void
+System_putchar(uint8_t c)
+{
+	ROM_UARTCharPut(UART1, c);
 }

@@ -33,6 +33,38 @@ static const uint16_t rpl_full_debug[] = {
 	0x30ff,
 };
 
+static const uint16_t exp_null_ptr[] = {
+	0x0000, 0x0000,
+};
+
+static const uint16_t rpl_exc_dump[] = {
+	0xbeb5, 0x1002, // ti_sysbios_family_arm_m3_Hwi_excHandlerMax
+};
+
+static const uint16_t exp_error_spin[] = {
+	0xf1f7, 0x1002,
+};
+
+static const uint16_t rpl_error_spin[] = {
+	0xfb35, 0x1002, // ti_sysbios_family_arm_m3_Hwi_return
+};
+
+static const uint16_t exp_system_putchar_1_4_1[] = {
+	0x60f9, 0x0002,
+};
+
+static const uint16_t rpl_system_putchar_1_4_1[] = {
+	(SYSTEM_PUTCHAR1 & 0xffff) | 1, SYSTEM_PUTCHAR1 >> 16,
+};
+
+static const uint16_t exp_system_putchar_2_4_1[] = {
+	0xdbc9, 0x0002,
+};
+
+static const uint16_t rpl_system_putchar_2_4_1[] = {
+	(SYSTEM_PUTCHAR2 & 0xffff) | 1, SYSTEM_PUTCHAR2 >> 16,
+};
+
 static const uint16_t exp_offset_rtos_stat_1_4_1[] = {
 	0xf6a1, 0x0000,
 };
@@ -99,6 +131,54 @@ static const patch_t patch_full_debug_2_4_1 = {
 	rpl_full_debug,
 };
 
+static const patch_t patch_exc_dump_1_4_1 = {
+	"exception dump",
+	0x294d8,
+	N_ARRAY(rpl_exc_dump),
+	exp_null_ptr,
+	rpl_exc_dump,
+};
+
+static const patch_t patch_exc_dump_2_4_1 = {
+	"exception dump",
+	0x31770,
+	N_ARRAY(rpl_exc_dump),
+	exp_null_ptr,
+	rpl_exc_dump,
+};
+
+static const patch_t patch_error_spin_1_4_1 = {
+	"error spin",
+	0x29440,
+	N_ARRAY(rpl_error_spin),
+	exp_error_spin,
+	rpl_error_spin,
+};
+
+static const patch_t patch_error_spin_2_4_1 = {
+	"error spin",
+	0x316d8,
+	N_ARRAY(rpl_error_spin),
+	exp_error_spin,
+	rpl_error_spin,
+};
+
+static const patch_t patch_system_putchar_1_4_1 = {
+	"system putchar",
+	0x29604,
+	N_ARRAY(rpl_system_putchar_1_4_1),
+	exp_system_putchar_1_4_1,
+	rpl_system_putchar_1_4_1,
+};
+
+static const patch_t patch_system_putchar_2_4_1 = {
+	"system putchar",
+	0x3189c,
+	N_ARRAY(rpl_system_putchar_2_4_1),
+	exp_system_putchar_2_4_1,
+	rpl_system_putchar_2_4_1,
+};
+
 static const patch_t patch_offset_rtos_stat_1_4_1 = {
 	"offset dump",
 	0x2a108,
@@ -150,6 +230,9 @@ static const patch_t patch_date_time_2_4_1 = {
 static const patch_t *patches_1_4_1[] = {
 	&patch_offset_rtos_stat_1_4_1,
 	&patch_full_debug_1_4_1,
+	&patch_exc_dump_1_4_1,
+	&patch_error_spin_1_4_1,
+	&patch_system_putchar_1_4_1,
 	&patch_dump_1_4_1,
 	&patch_date_time_1_4_1,
 };
@@ -157,6 +240,9 @@ static const patch_t *patches_1_4_1[] = {
 static const patch_t *patches_2_4_1[] = {
 	&patch_offset_rtos_stat_2_4_1,
 	&patch_full_debug_2_4_1,
+	&patch_exc_dump_2_4_1,
+	&patch_error_spin_2_4_1,
+	&patch_system_putchar_2_4_1,
 	&patch_dump_2_4_1,
 	&patch_date_time_2_4_1,
 };

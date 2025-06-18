@@ -19,7 +19,11 @@ pack.o: pack.c pack.h
 unpack.o: unpack.c pack.h
 crc32.o: crc32.c ware.h
 patch.o: patch.c ware.h
+
 ble-patch.o: ble-patch.c ware.h keys1.hex keys2.hex
+	$(eval SYSTEM_PUTCHAR1=$(shell nm keys1 | grep System_putchar | cut -d' ' -f1))
+	$(eval SYSTEM_PUTCHAR2=$(shell nm keys2 | grep System_putchar | cut -d' ' -f1))
+	$(CC) $(CFLAGS) -DSYSTEM_PUTCHAR1=0x$(SYSTEM_PUTCHAR1) -DSYSTEM_PUTCHAR2=0x$(SYSTEM_PUTCHAR2) -o $@ -c $<
 
 patch-dump.o: patch.c ware.h dump.hex
 	$(CC) $(CFLAGS) -DDUMP -o $@ -c $<
