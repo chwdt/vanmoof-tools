@@ -232,7 +232,7 @@ static const patch_t *patches_1_4_1[] = {
 	&patch_full_debug_1_4_1,
 	&patch_exc_dump_1_4_1,
 	&patch_error_spin_1_4_1,
-	// &patch_system_putchar_1_4_1,
+	&patch_system_putchar_1_4_1,
 	&patch_dump_1_4_1,
 	&patch_date_time_1_4_1,
 };
@@ -242,7 +242,7 @@ static const patch_t *patches_2_4_1[] = {
 	&patch_full_debug_2_4_1,
 	&patch_exc_dump_2_4_1,
 	&patch_error_spin_2_4_1,
-	// &patch_system_putchar_2_4_1,
+	&patch_system_putchar_2_4_1,
 	&patch_dump_2_4_1,
 	&patch_date_time_2_4_1,
 };

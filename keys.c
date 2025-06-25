@@ -253,11 +253,25 @@ dump_extflash(const char *args)
 
 #define FLASH_FCFG_B0_SSIZE0 0x40032430
 
-#define ROM_UARTCharPut \
-    ((void (*)(uint32_t ui32Base, uint8_t ui8Data)) \
-    ROM_API_UART_TABLE[7])
+#define UART1 0x4000b000
 
-#define UART1 0x40000b00
+struct UART {
+	volatile uint32_t DR;
+	volatile uint32_t RSR_ECR;
+	uint32_t unused0[4];
+	volatile uint32_t FR;
+	uint32_t unused1[2];
+	volatile uint32_t IBRD;
+	volatile uint32_t FBRD;
+	volatile uint32_t LCRH;
+	volatile uint32_t CTL;
+	volatile uint32_t IFLS;
+	volatile uint32_t IMSC;
+	volatile uint32_t RIS;
+	volatile uint32_t MIS;
+	volatile uint32_t ICR;
+	volatile uint32_t DMACTL;
+};
 
 #define ROM_VIMSModeSet \
     ((void (*)(uint32_t ui32Base, uint32_t ui32Mode)) \
@@ -435,7 +449,19 @@ void
 System_putchar(uint8_t c)
 {
 	if (Hwi_module->excActive[0]) {
-		ROM_UARTCharPut(UART1, c);
+		struct UART *uart = (struct UART *)UART1;
+		uint32_t imsc = uart->IMSC;
+		uart->IMSC = 0;
+		uart->CTL |= 0x100;
+		while (uart->FR & 0x20)
+			/* wait */;
+		if (c == '\n') {
+			uart->DR = '\r';
+			while (uart->FR & 0x20)
+				/* wait */;
+		}
+		uart->DR = c;
+		uart->IMSC = imsc;
 	} else {
 		system_putchar_t putc = (system_putchar_t)SYSTEM_PUTCHAR;
 		putc(c);
