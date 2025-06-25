@@ -4,7 +4,7 @@ LDLIBS = -lz
 CFLAGS = -O1 -g
 
 ARM_FLAGS = -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
-	-ffreestanding -fPIC -fno-toplevel-reorder
+	-ffreestanding -fno-toplevel-reorder
 
 all: pack unpack crc32 patch patch-dump ble-patch
 
@@ -35,7 +35,7 @@ dump.bin: dump.o
 	arm-none-eabi-objcopy -O binary $< $@
 
 dump.o: dump.c
-	arm-none-eabi-gcc $(ARM_FLAGS) -c $<
+	arm-none-eabi-gcc $(ARM_FLAGS) -fPIC -c $<
 
 keys1.hex: keys1.bin
 	od -v -An -tx2 $< | sed -e 's/\([0-9a-f][0-9a-f][0-9a-f][0-9a-f]\)/0x\1,/g' >$@

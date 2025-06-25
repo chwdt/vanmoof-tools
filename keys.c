@@ -1,4 +1,5 @@
 typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef uint32_t size_t;
 
@@ -8,6 +9,7 @@ typedef uint32_t size_t;
 #define GET_KEY (0x20bb8 + 1)
 #define SHOW_HELP (0x21244 + 1)
 #define SSCANF (0x23838 + 1)
+#define SYSTEM_PUTCHAR (0x260f8 + 1)
 #endif
 
 #ifdef VERSION_2_4_1
@@ -16,6 +18,7 @@ typedef uint32_t size_t;
 #define GET_KEY (0x26ea2 + 1)
 #define SHOW_HELP (0x27744 + 1)
 #define SSCANF (0x2a670 + 1)
+#define SYSTEM_PUTCHAR (0x2dbc8 + 1)
 #endif
 
 #define WDT 0x40080000
@@ -40,6 +43,7 @@ typedef int (*get_key_t) (unsigned int index, uint8_t *data);
 typedef int (*read_extflash_t) (uint32_t addr, size_t len, uint8_t *data);
 typedef void (*show_help_t) (const char*, const char*);
 typedef int (*sscanf_t) (const char *str, const char *fmt, ...);
+typedef void (*system_putchar_t) (char c);
 
 static void strcpy(char *, const char *);
 static int strcmp(const char *, const char *);
@@ -412,8 +416,28 @@ strncmp(const char *s1, const char *s2, size_t n)
 	return *s1 - *s2;
 }
 
+extern void *xdcRomStatePtr;
+
+typedef uint16_t xdc_Bool;
+typedef xdc_Bool __T1_ti_sysbios_family_arm_m3_Hwi_Module_State__excActive;
+typedef xdc_Bool *ARRAY1_ti_sysbios_family_arm_m3_Hwi_Module_State__excActive;
+typedef ARRAY1_ti_sysbios_family_arm_m3_Hwi_Module_State__excActive __TA_ti_sysbios_family_arm_m3_Hwi_Module_State__excActive;
+
+typedef struct Hwi_Module_State {
+	char *xdcTaskSP;
+	__TA_ti_sysbios_family_arm_m3_Hwi_Module_State__excActive excActive;
+} ti_sysbios_family_arm_m3_Hwi_Module_State;
+
+#define ti_sysbios_family_arm_m3_Hwi_Module__state__V_offset 0xd0
+#define Hwi_module ((ti_sysbios_family_arm_m3_Hwi_Module_State *)(xdcRomStatePtr + ti_sysbios_family_arm_m3_Hwi_Module__state__V_offset))
+
 void
 System_putchar(uint8_t c)
 {
-	ROM_UARTCharPut(UART1, c);
+	if (Hwi_module->excActive[0]) {
+		ROM_UARTCharPut(UART1, c);
+	} else {
+		system_putchar_t putc = (system_putchar_t)SYSTEM_PUTCHAR;
+		putc(c);
+	}
 }
