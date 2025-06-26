@@ -458,6 +458,9 @@ int main(int argc, char** argv)
 
  		if ((le32toh(ble_ware.crc) == 0xb79c4373) && (length == 0x0002c67c)) {
                 	if (verify_expected(filename, data, NULL, &patchset_1_4_1, verbose)) {
+				if (add_len) {
+					ftruncate(fd, st.st_size + add_len);
+				}
                         	apply_patches(data, NULL, &patchset_1_4_1, verbose);
 
 				fixup_headers(&ble_ware, data, st.st_size, add_len, filename);
@@ -467,6 +470,9 @@ int main(int argc, char** argv)
 			}
  		} else if ((le32toh(ble_ware.crc) == 0x884a9283) && (length == 0x0003531c)) {
                 	if (verify_expected(filename, data, NULL, &patchset_2_4_1, verbose)) {
+				if (add_len) {
+					ftruncate(fd, st.st_size + add_len);
+				}
                         	apply_patches(data, NULL, &patchset_2_4_1, verbose);
 
 				fixup_headers(&ble_ware, data, st.st_size, add_len, filename);
@@ -482,9 +488,6 @@ int main(int argc, char** argv)
 		fprintf(stderr, "%s: Not a vanmoof ware file\n", filename);
 		exit(1);
 	}
-
-	lseek(fd, 0, SEEK_END);
-	write(fd, data + st.st_size, add_len);
 
 	munmap(data, st.st_size + add_len);
 
