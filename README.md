@@ -304,7 +304,7 @@ Message format 6:
 
 | M-ID | Cmd | Len | Unknown1 | Unknown2 | Modbus CRC | Padding |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| 00000004 | 0008 | 03 | xxxx | yy | zzzz | 04040404 |
+| 00000004 | 0008 | 02+n | xxxx | yy .. yy (n bytes) | zzzz | .. |
 
 The possible Cmd values are:
 
