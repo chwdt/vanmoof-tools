@@ -488,6 +488,14 @@ OK
 +UULOC: 16/05/2025,08:27:54.000,<latitude>,<longitude>,0,601,0,0,0,2,0,0,0
 ```
 
+
+## Ideas
+
+I see a crash of the controller when sending firmware update packets > 256 bytes, so there might be the chance to use this as an exploit to read out the MKEY over bluetooth. We need the MKEY to be able to:
+- decode the update packages received from Vanmoof
+- send our own update package (patched with features like offroad) to the bike
+
+
 ## External resources
 
 - [Wiring harness](https://www.moofrepair.nl/wiring-harness/)
@@ -501,15 +509,8 @@ OK
 
 - [Tobias](https://github.com/Knight1)
 - [Quinten](https://github.com/quintenadema)
+- [Max] (https://github.com/MPeek1995)
 
-
-## Help needed
-
-If you want to support these efforts, please contact me with your offer. I could really use a smart cartridge to hook up a debugger to the TI bluetooth controller and debug some ideas I have...
-
-I see a crash of the controller when sending firmware update packets > 256 bytes, so there might be the chance to use this as an exploit to read out the MKEY over bluetooth. We need the MKEY to be able to:
-- decode the update packages received from Vanmoof
-- send our own update package (patched with features like offroad) to the bike
 
 ## Fun facts
 
