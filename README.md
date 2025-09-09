@@ -160,6 +160,7 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ```
 0x20000a00: Bike configuration
    + 0x109: Region
+   + 0x145: Model: Bit0: 0=ES3, 1=ES4; Bit1: 1=E-Shifter, Bit2: 1=Display
 
    + 0x310: EEPROM copy 0x3c bytes
    + 0x310: Alarm state
