@@ -18,7 +18,9 @@ static char *progname;
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-v] [-f <fake-version>] <binfile>\n", progname);
+	fprintf(stderr, "usage: %s [-v] [-f <fake-version>] [-m <model>] <binfile>\n", progname);
+	fprintf(stderr, "\nfake-version:\t<major>.<minor>.<patch>\n");
+	fprintf(stderr, "model:\t\t<model (3|4)>,<shifter (0|1)>,<display (0|1)>\n");
 	exit(1);
 }
 
@@ -134,6 +136,15 @@ static const uint16_t rpl_help_1_9_3[] = {
 	0x0061, 0x0802
 };
 
+static const uint16_t exp_help_text_1_9_3[] = {
+	0x5400, 0x6968, 0x2073, 0x6574, 0x736b, 0x0074	/* "\0This tekst\0" */
+};
+
+static const uint16_t rpl_help_text_1_9_3[] = {
+	0x4800, 0x6c65, 0x2f70, 0x7564, 0x706d, 0x0000	/* "\0Help/dump\0\0" */
+};
+
+
 #endif /* DUMP */
 
 static const uint16_t exp_version_1_9_3[] = {
@@ -142,6 +153,14 @@ static const uint16_t exp_version_1_9_3[] = {
 
 static uint16_t rpl_version_any[] = {
 	0x00f4, 0x0000
+};
+
+static uint16_t exp_model_06[] = {
+	0x2306		/*	movs	r3, #6			*/
+};
+
+static uint16_t rpl_model_any[] = {
+	0x2300		/*	movs	r3, #0			*/
 };
 
 #define N_ARRAY(a) (sizeof(a) / sizeof(a[0]))
@@ -218,6 +237,14 @@ static const patch_t patch_help_1_9_3 = {
 	rpl_help_1_9_3
 };
 
+static const patch_t patch_help_text_1_9_3 = {
+	"Hijack help text",
+	0x0804dbb0,
+	N_ARRAY(rpl_help_text_1_9_3),
+	exp_help_text_1_9_3,
+	rpl_help_text_1_9_3
+};
+
 #endif /* DUMP */
 
 static const patch_t patch_version_head_1_9_3 = {
@@ -236,6 +263,22 @@ static const patch_t patch_version_1_9_3 = {
 	rpl_version_any
 };
 
+static const patch_t patch_model0_1_9_3 = {
+	"Patch bike model: 0",
+	0x0803ebd8,
+	N_ARRAY(rpl_model_any),
+	exp_model_06,
+	rpl_model_any
+};
+
+static const patch_t patch_model1_1_9_3 = {
+	"Patch bike model: 1",
+	0x0803ef3c,
+	N_ARRAY(rpl_model_any),
+	exp_model_06,
+	rpl_model_any
+};
+
 static const patch_t *patches_1_9_3[] = {
 	&patch_region_ble_1_9_3,
 	&patch_power_ble_1_9_3,
@@ -245,6 +288,7 @@ static const patch_t *patches_1_9_3[] = {
 	&patch_power_level_inc,
 #ifdef DUMP
 	&patch_help_1_9_3,
+	&patch_help_text_1_9_3,
 	&patch_dump_1_9_3,
 #endif /* DUMP */
 };
@@ -254,22 +298,36 @@ static const patch_t *version_1_9_3[] = {
 	&patch_version_1_9_3
 };
 
+static const patch_t *model_1_9_3[] = {
+	&patch_model0_1_9_3,
+	&patch_model1_1_9_3
+};
+
 typedef struct {
 	const char *date;
 	const char *time;
+	uint32_t flags;
 	size_t n_patches;
 	const patch_t **patches;
 	size_t n_version_patches;
 	const patch_t **version_patches;
+	size_t n_model_patches;
+	const patch_t **model_patches;
 } patchset_t;
 
-static const patchset_t patchset_1_9_3 = {
+#define PATCHSET_FLAG_VERSION	(1 << 0)
+#define PATCHSET_FLAG_MODEL	(1 << 1)
+
+static patchset_t patchset_1_9_3 = {
 	"Apr 30 2025",
 	"10:30:52",
+	0,
 	N_ARRAY(patches_1_9_3),
 	patches_1_9_3,
 	N_ARRAY(version_1_9_3),
 	version_1_9_3,
+	N_ARRAY(model_1_9_3),
+	model_1_9_3,
 };
 
 static void setup_version_patches(const char *fake_version, int verbose)
@@ -301,6 +359,63 @@ static void setup_version_patches(const char *fake_version, int verbose)
 
 	if (verbose) {
 		printf("%s: patch version to %u.%u.%u\n", progname, major_version, minor_version, patch_version);
+	}
+}
+
+static void setup_model_patches(const char *model, int verbose)
+{
+	int model_no = 3, shifter = 1, display = 1;
+	uint8_t model_byte;
+	char *end;
+
+	const char *p = model;
+	model_no = strtoul(p, &end, 10);
+	if ((end == p) || (*end != ',')) {
+		fprintf(stderr, "%s: can't parse model '%s'\n", progname, model);
+		exit(1);
+	}
+	p = end + 1;
+	shifter = strtoul(p, &end, 10);
+	if ((end == p) || (*end != ',')) {
+		fprintf(stderr, "%s: can't parse model '%s'\n", progname, model);
+		exit(1);
+	}
+	p = end + 1;
+	display = strtoul(p, &end, 10);
+	if ((end == p) || (*end != '\0')) {
+		fprintf(stderr, "%s: can't parse model '%s'\n", progname, model);
+		exit(1);
+	}
+
+	if (model_no != 3 && model_no != 4) {
+		fprintf(stderr, "%s: can't parse model '%s': model must be 3 or 4\n", progname, model);
+		exit(1);
+	}
+	if (shifter != 0 && shifter != 1) {
+		fprintf(stderr, "%s: can't parse model '%s': shifter must be 0 or 1\n", progname, model);
+		exit(1);
+	}
+	if (display != 0 && display != 1) {
+		fprintf(stderr, "%s: can't parse model '%s': display must be 0 or 1\n", progname, model);
+		exit(1);
+	}
+
+	model_byte = 0;
+	if (model_no == 4) {
+		model_byte |= 1;
+	}
+	if (shifter) {
+		model_byte |= 2;
+	}
+	if (display) {
+		model_byte |= 4;
+	}
+
+	rpl_model_any[0] |= model_byte;
+
+	if (verbose) {
+		printf("%s: patch model to %s with%s shifter with%s display\n", progname,
+		       model_byte & 1 ? "ES4" : "ES3", model_byte & 2 ? "" : "out", model_byte & 4 ? "" : "out");
 	}
 }
 
@@ -359,7 +474,7 @@ static int verify_patch(const char *filename, const void *data, const patch_t *p
 	return 0;
 }
 
-static int verify_expected(const char *filename, const void *data, const char* fake_version, const patchset_t *set, int verbose)
+static int verify_expected(const char *filename, const void *data, const patchset_t *set, int verbose)
 {
 	int expect_ok = 1;
 
@@ -369,9 +484,17 @@ static int verify_expected(const char *filename, const void *data, const char* f
 		}
 	}
 
-	if (fake_version) {
+	if (set->flags & PATCHSET_FLAG_VERSION) {
 		for (size_t i = 0; i < set->n_version_patches; i++) {
 			if (verify_patch(filename, data, set->version_patches[i], verbose) != 0) {
+				expect_ok = 0;
+			}
+		}
+	}
+
+	if (set->flags & PATCHSET_FLAG_MODEL) {
+		for (size_t i = 0; i < set->n_model_patches; i++) {
+			if (verify_patch(filename, data, set->model_patches[i], verbose) != 0) {
 				expect_ok = 0;
 			}
 		}
@@ -394,15 +517,21 @@ static void apply_patch(void *data, const patch_t *patch, int verbose)
 	}
 }
 
-static void apply_patches(void *data, const char *fake_version, const patchset_t *set, int verbose)
+static void apply_patches(void *data, const patchset_t *set, int verbose)
 {
 	for (size_t i = 0; i < set->n_patches; i++) {
 		apply_patch(data, set->patches[i], verbose);
 	}
 
-	if (fake_version) {
+	if (set->flags & PATCHSET_FLAG_VERSION) {
 		for (size_t i = 0; i < set->n_version_patches; i++) {
 			apply_patch(data, set->version_patches[i], verbose);
+		}
+	}
+
+	if (set->flags & PATCHSET_FLAG_MODEL) {
+		for (size_t i = 0; i < set->n_model_patches; i++) {
+			apply_patch(data, set->model_patches[i], verbose);
 		}
 	}
 }
@@ -410,6 +539,8 @@ static void apply_patches(void *data, const char *fake_version, const patchset_t
 int main(int argc, char** argv)
 {
 	char *fake_version = NULL;
+	char *model = NULL;
+	uint32_t flags = 0;
 	int verbose = 0;
 	int opt;
 
@@ -419,10 +550,13 @@ int main(int argc, char** argv)
 	else
 		progname = argv[0];
 
-	while ((opt = getopt(argc, argv, "f:v")) != -1) {
+	while ((opt = getopt(argc, argv, "f:m:v")) != -1) {
 		switch (opt) {
 			case 'f':
 				fake_version = optarg;
+				break;
+			case 'm':
+				model = optarg;
 				break;
 			case 'v':
 				verbose++;
@@ -440,6 +574,12 @@ int main(int argc, char** argv)
 
 	if (fake_version) {
 		setup_version_patches(fake_version, verbose);
+		flags |= PATCHSET_FLAG_VERSION;
+	}
+
+	if (model) {
+		setup_model_patches(model, verbose);
+		flags |= PATCHSET_FLAG_MODEL;
 	}
 
 	int fd = open(filename, O_RDWR);
@@ -487,9 +627,10 @@ int main(int argc, char** argv)
 
 		switch (le32toh(ware.version)) {
 		case 0x010903f4:
+			patchset_1_9_3.flags = flags;
 			if ((le32toh(ware.crc) == 0x76c1ab9d) && (length == 0x0002fcc8)) {
-				if (verify_expected(filename, data, fake_version, &patchset_1_9_3, verbose)) {
-					apply_patches(data, fake_version, &patchset_1_9_3, verbose);
+				if (verify_expected(filename, data, &patchset_1_9_3, verbose)) {
+					apply_patches(data, &patchset_1_9_3, verbose);
 
 					memcpy(&ware, data, sizeof(ware));
 
