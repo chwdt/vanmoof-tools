@@ -55,7 +55,7 @@ This tool patches a modern VanMoof mainware file, so the region OFFROAD is not r
 
 The file given on the command line is overwritten with the patched version of the file, so please make a backup of your mainware before using the tool.
 
-# Options:
+### Options:
 
 - `-v`: Be verbose
 - `-f <fake-version>`: Specify a different version, format: `<major>.<minor>.<patch>`
