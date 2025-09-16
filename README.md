@@ -130,6 +130,8 @@ The boot loader is not touched again once these CCFG values are present.
 
 This tool patches a modern VanMoof mainware as `patch` above, but adds a function to dump FLASH or memory to the console. This function is patched into the `help` command and will output FLASH or memory as hexdump.  Use as `help <addr> <count>`.
 
+The hexdump can be converted to binary using the `dump2bin.sh` script.
+
 An older version would output the whole FLASH as S-Records, the source is still provided in the repo, edit the Makefile if you want to use this function.
 
 Capture the terminal output to a logfile and clip out the S-Records to a file `vanmoof.srec`. To convert this dump to the different binaries used inside the bike, use these shell commands:
