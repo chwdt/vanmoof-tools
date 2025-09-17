@@ -250,7 +250,7 @@ Main MCU communicates with the other MCUs via:
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | USART1 | PA9 | PA10 | Alternative debug | console | maybe accessed through debug header TC1? |
 | USART2 | PA2 | PA3 | GSM uBlox G350 | AT commands | passthrough in `gsmdebug` mode |
-| USART3 | PD8/PD9 | Shifter MCU | [Modbus](https://en.wikipedia.org/wiki/Modbus) ||
+| USART3 | PD8 | PD9 | Shifter MCU | [Modbus](https://en.wikipedia.org/wiki/Modbus) ||
 | UART4 | PA0 | PA1 | Battery MCU | [Modbus](https://en.wikipedia.org/wiki/Modbus) ||
 | UART5 | PB13 | PB12 | BLE MCU control | SSP | [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets |
 | USART6 | PC6 | PC7 | Motor MCU | SSP | [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets |
