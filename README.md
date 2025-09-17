@@ -246,14 +246,16 @@ Use as a reference howto read logs over BLE.
 
 Main MCU communicates with the other MCUs via:
 
-- Main MCU debug: UART7 (port behind rear light)
-- BLE MCU control: UART5 (SSP, [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets)
-- BLE MCU debug: UART8 (passthru in bledebug mode)
-- GSM uBlox G350: USART2 (AT commands, passthru in gsmdebug mode)
-- Battery MCU: UART4 ([Modbus](https://en.wikipedia.org/wiki/Modbus))
-- Shifter MCU: USART3 ([Modbus](https://en.wikipedia.org/wiki/Modbus))
-- Motor MCU: USART6 (SSP, [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets)
-- Main MCU alternative debug: USART1  (unknown how this is accessed, maybe through GSM?)
+| UART | TX | RX | Function | Protocol | Comments |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| USART1 | PA9 | PA10 | Alternative debug | console | maybe accessed through debug header TC1? |
+| USART2 | PA2 | PA3 | GSM uBlox G350 | AT commands | passthrough in `gsmdebug` mode |
+| USART3 | PD8/PD9 | Shifter MCU | [Modbus](https://en.wikipedia.org/wiki/Modbus) ||
+| UART4 | PA0 | PA1 | Battery MCU | [Modbus](https://en.wikipedia.org/wiki/Modbus) ||
+| UART5 | PB13 | PB12 | BLE MCU control | SSP | [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets |
+| USART6 | PC6 | PC7 | Motor MCU | SSP | [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets |
+| UART7 | PE8 | PE7 | Main MCU debug | console | port behind rear light |
+| UART8 | PE1 | PE0 | BLE MCU debug | console | passthrough in `bledebug` mode |
 
 The [SLIP](https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol) encoded packets contain one byte sender address, a command byte, a sequence byte,
 a little endian 16 bit word which is an offset or a function code, a 16 bit data length word, data, and a 16 bit CRC, which is the same as the [Modbus](https://en.wikipedia.org/wiki/Modbus) CRC.
@@ -518,7 +520,7 @@ I see a crash of the controller when sending firmware update packets > 256 bytes
 
 - [Tobias](https://github.com/Knight1)
 - [Quinten](https://github.com/quintenadema)
-- [Max] (https://github.com/MPeek1995)
+- [Max](https://github.com/MPeek1995)
 
 
 ## Fun facts
