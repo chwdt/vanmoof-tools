@@ -7,6 +7,7 @@ typedef uint32_t size_t;
 #define FLASH_START 0x08000000
 #define FLASH_SIZE  0x00180000
 
+// #define USART3_START 0x40004800
 #define UART7_START 0x40007800
 #define WWDG_START  0x40002c00
 
@@ -24,13 +25,13 @@ typedef struct {
 typedef uint32_t (*strtoul_t) (const char *, char **, uint32_t base);
 typedef void (*help_t) (void);
 
-static void dump_dataline(uint32_t addr, const uint8_t *data);
-static void uart_send(const char* data, size_t len);
+static void dump_dataline(UART_t* uart, uint32_t addr, const uint8_t *data);
+static void uart_send(UART_t* uart, const char* data, size_t len);
 
 void
 dump(const char *args)
 {
-	UART_t *UART7 = (void *)UART7_START;
+	UART_t *uart = (void *)UART7_START;
 	strtoul_t strtoul = (strtoul_t)(0x3f8c8 + 1);
 	help_t help = (help_t)(0x35e04 + 1);
 	char *end;
@@ -48,21 +49,21 @@ dump(const char *args)
 	addr &= ~(0xf);
 	n = (n + 0xf) & ~(0xf);
 
-	uint32_t cr1 = UART7->CR1;
-	UART7->CR1 = cr1 & ~(0x1f0);
+	uint32_t cr1 = uart->CR1;
+	uart->CR1 = cr1 & ~(0x1f0);
 
 	uint8_t *data = (uint8_t *) addr;
 	while (n > 0) {
-		dump_dataline(addr, data);
+		dump_dataline(uart, addr, data);
 
 		addr += 16;
 		data += 16;
 		n -= 16;
 	}
 
-	while (!(UART7->SR & 0x40))
+	while (!(uart->SR & 0x40))
 		/* wait */;
-	UART7->CR1 = cr1;
+	uart->CR1 = cr1;
 }
 
 static uint8_t byte_to_rec(char* buffer, uint8_t byte)
@@ -86,22 +87,21 @@ static void wdg(void)
 	WWDG->CR = 0x7f;
 }
 
-static void uart_send(const char* data, size_t len)
+static void uart_send(UART_t* uart, const char* data, size_t len)
 {
-	UART_t *UART7 = (void *)UART7_START;
 	size_t i;
 
 	for (i = 0; i < len; i++) {
-		while (!(UART7->SR & 0x80))
+		while (!(uart->SR & 0x80))
 			/* wait */;
-		UART7->DR = data[i];
+		uart->DR = data[i];
 	}
 
 	wdg();
 }
 
 static void
-dump_dataline(uint32_t addr, const uint8_t *data)
+dump_dataline(UART_t* uart, uint32_t addr, const uint8_t *data)
 {
 	char buffer[80];
 	char *p = buffer;
@@ -136,5 +136,5 @@ dump_dataline(uint32_t addr, const uint8_t *data)
 	*p++ = '\r';
 	*p++ = '\n';
 
-	uart_send(buffer, p - buffer);
+	uart_send(uart, buffer, p - buffer);
 }
