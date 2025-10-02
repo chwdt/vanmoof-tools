@@ -168,7 +168,7 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ```
 0x20000a00: Bike state/config
    from FLASH at 0x8008000 or 0x800c000, 0xc0 bytes
-   + 0x0f4: Sound [bitmask](vanmoof_sx3_sound_bitmask.md) low
+   + 0x0f4: Sound ```[`bitmask`](vanmoof_sx3_sound_bitmask.md)``` low
    + 0x0f8: Sound [bitmask](vanmoof_sx3_sound_bitmask.md) medium
    + 0x0fc: Sound [bitmask](vanmoof_sx3_sound_bitmask.md) high
    + 0x100: Backup code
