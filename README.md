@@ -166,27 +166,115 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ## Offsets in smart controller internal SRAM:
 
 ```
-0x20000a00: Bike configuration
+0x20000a00: Bike state/config
+   from FLASH at 0x8008000 or 0x800c000, 0xc0 bytes
+   + 0x0f4: Sound [bitmask](vanmoof_sx3_sound_bitmask.md) low
+   + 0x0f8: Sound [bitmask](vanmoof_sx3_sound_bitmask.md) medium
+   + 0x0fc: Sound [bitmask](vanmoof_sx3_sound_bitmask.md) high
+   + 0x100: Backup code
+   + 0x102: Lux low
+   + 0x105: Volume low
+   + 0x106: Volume medium
+   + 0x107: Volume high
+   + 0x108: Shift mode: AUTO/MANUAL
    + 0x109: Region
+   + 0x10a: Unit system
+   + 0x10b: Wheel motor type
+   + 0x10c: Light mode
+   + 0x10e: Shift up EU (3 x uint16_t)
+   + 0x114: Shift up US (3 x uint16_t)
+   + 0x11a: Shift up JP (3 x uint16_t)
+   + 0x120: Shift up OFFROAD (3 x uint16_t)
+   + 0x126: Shift down EU (3 x uint16_t)
+   + 0x12c: Shift down US (3 x uint16_t)
+   + 0x132: Shift down JP (3 x uint16_t)
+   + 0x138: Shift down OFFROAD (3 x uint16_t)
+   + 0x140: Mainware version
+   + 0x144: Region lock
    + 0x145: Model: Bit0: 0=ES3, 1=ES4; Bit1: 1=E-Shifter, Bit2: 1=Display
+   + 0x146: Custom soc
+   + 0x147: HW revision
+   + 0x1c0: CRC32 over FLASH data
 
-   + 0x310: EEPROM copy 0x3c bytes
+   Motor support settings (from mainware):
+   + 0x2c6: Motor percent power level 0
+   + 0x2c8: Motor speed limit power level 0
+   + 0x2ca: Motor percent power level 1
+   + 0x2cc: Motor speed limit power level 1
+   + 0x2ce: Motor percent power level 2
+   + 0x2d0: Motor speed limit power level 2
+   + 0x2d2: Motor percent power level 3
+   + 0x2d4: Motor speed limit power level 3
+   + 0x2d6: Motor percent power level 4
+   + 0x2d8: Motor speed limit power level 4
+   + 0x2d6: Motor percent power level 5
+   + 0x2d8: Motor speed limit power level 5
+
+   from EEPROM, 0x3c bytes
    + 0x310: Alarm state
    + 0x311: Play lock sound
-   + 0x312: remote locked
+   + 0x312: Remote locked
    + 0x313: Logging APP/Serial
    + 0x314: Shipping
-   + 0x316: Power level + high bit?
+   + 0x315: Cached BMS soc
+   + 0x316: Power level + Boost
    + 0x317: Alarm enable/disable
-   + 0x318: Horn file
-   + 0x31c: km * 10
-   + 0x334: Shifter tries
-   + 0x336: Shifter version
+   + 0x318: Horn file index
+   + 0x31c: Odometer: km * 10
+   + 0x320: Timestamp bell button
+   + 0x324: Timestamp boost button
+   + 0x328: Timestamp GSM check
+   + 0x32c: Firmware update order (6 bytes)
+   + 0x332: BMS soc override
+   + 0x333: BLE sleep request
+   + 0x334: Shifter retries
+   + 0x336: Shifter firmware version
+   + 0x338: Shifter total shifts
+   + 0x33c: GSM tracking heartbeat
+   + 0x340: Kicklock state
+   + 0x341: Battery state
+   + 0x342: BMS firmware version
    + 0x344: Wake counter
+   + 0x348: CRC32 over EEPROM data
 
+   Bike state
+   + 0x34c: BLE debug flag
+   + 0x34d: GSM debug flag
+   + 0x34e: Shift debug flag
+   + 0x34f: BMS debug flag
+   + 0x358: Loop count actual
+   + 0x35c: Loop count min
+   + 0x360: Loop count max
+   + 0x364: Motor error
+   + 0x366: Motor speed
+   + 0x368: Motor I
+   + 0x36a: Motor m_tmp
+   + 0x36c: Motor d_tmp
+   + 0x36e: Motor wlsp
+   + 0x370: Motor Ubat
+   + 0x372: Motor Pdsp
+   + 0x374: Motor Pdtrg
+   + 0x376: Motor io
+   + 0x388: Motor firmware version
+   + 0x38c: BLE firmware version
+   + 0x390: BLE MAC address (6 bytes)
+   + 0x396: BMS ESN (18 bytes)
+   + 0x3a8: Debug password (16 bytes)
+   + 0x3ba: Lipo version
+   + 0x3c0: Error flags (2 x uint32_t)
+   + 0x3cc: Speed 1
+   + 0x3ce: Speed 2
    + 0x3d1: Power level (init from 0x316 & 0x7f)
    + 0x3d2: Power level (copy, init from 0x316 & 0x7f)
-   + 0x3d3: Power level high bit? (init from 0x316 >> 7)
+   + 0x3d3: Ride change
+   + 0x3e0: Lipo state
+   + 0x3e4: Powerbank soc
+   + 0x3e6: Powerbank serial number (4 bytes)
+   + 0x3ea: Powerbank serial version (3 bytes)
+   + 0x3ed: Powerbank soh
+   + 0x3ee: Powerbank noc
+   + 0x3f1: Powerbank present
+   + 0x3f8: GSM type pointer
 ```
 
 ## Offsets in BLE controller internal ROM:
