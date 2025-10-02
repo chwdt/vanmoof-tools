@@ -168,9 +168,9 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 ```
 0x20000a00: Bike state/config
    from FLASH at 0x8008000 or 0x800c000, 0xc0 bytes
-   + 0x0f4: Sound bitmask* low
-   + 0x0f8: Sound bitmask* medium
-   + 0x0fc: Sound bitmask* high
+   + 0x0f4: Sound bitmask [1] low
+   + 0x0f8: Sound bitmask [1] medium
+   + 0x0fc: Sound bitmask [1] high
    + 0x100: Backup code
    + 0x102: Lux low
    + 0x105: Volume low
@@ -276,7 +276,7 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
    + 0x3f1: Powerbank present
    + 0x3f8: GSM type pointer
 ```
-[bitmask](vanmoof_sx3_sound_bitmask.md)
+`[1]` [bitmask](vanmoof_sx3_sound_bitmask.md)
 
 ## Offsets in BLE controller internal ROM:
 
