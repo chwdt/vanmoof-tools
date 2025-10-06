@@ -275,6 +275,49 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
    + 0x3ee: Powerbank noc
    + 0x3f1: Powerbank present
    + 0x3f8: GSM type pointer
+
+   Battery state
+   + 0x402: Type
+   + 0x406: Error flags
+   + 0x408: Temperature	(&deg;C/100)
+   + 0x40a: Voltage (mV)
+   + 0x40c: State of charge (%)
+   + 0x40e: Current (mA)
+   + 0x412: Discharging flag
+   + 0x414: Testmode flag
+   + 0x416: HW version
+   + 0x418: SW version
+   + 0x41a: Serial number (14 bytes)
+   + 0x428: Manufacture date (3 bytes)
+   + 0x42c: cap_nominal
+   + 0x42e: cap_full
+   + 0x430: cap_remain
+   + 0x432: health
+   + 0x434: cycle_count
+   + 0x438: cell_voltage (10 x mV)
+   + 0x44c: tp1
+   + 0x44e: tp2
+   + 0x450: mos_tmp
+   + 0x454: u_max
+   + 0x456: u_min
+   + 0x45a: Boot loader version
+   + 0x462: fsr
+   + 0x490: dotp
+   + 0x492: dutp
+   + 0x494: cotp
+   + 0x496: cutp
+   + 0x498: docp1
+   + 0x49a: docp2
+   + 0x49c: cocp1
+   + 0x49e: cocp2
+   + 0x4a0: ovp1
+   + 0x4a2: ovp2
+   + 0x4a4: uvp1
+   + 0x4a6: uvp2
+   + 0x4a8: pdocp
+   + 0x4aa: pdscp
+   + 0x4ac: motp
+   + 0xac scp
 ```
 `[1]` [bitmask](vanmoof_sx3_sound_bitmask.md)
 
