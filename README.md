@@ -2,14 +2,6 @@
 
 Tools to support VanMoof S3/X3 reverse engineering efforts
 
-## unpack
-
-usage: `unpack <packfile>`
-
-This tool extracts the contents of a VanMoof update file, also known as PACK file. A PACK file starts with a header containing the magic "PACK", an offset to a directory structure and the length of the directory structure. The directory structure (at the end of the file) contains one or more entries containing a filename, an offset, and the length of the data. See pack.h for details of these structures.
-
-The tool will overwrite any file present in the current directory if this is contained in the PACK file. Run this in a separate directory to be shure not to loose any data.
-
 ## Known firmware images:
 
 - mainware.bin (MCU: ST STM32F413VGT6)
@@ -18,6 +10,9 @@ The tool will overwrite any file present in the current directory if this is con
 - shifterware.bin (MCU: MindMotion MM32F031F6U6)
 - batteryware.bin (MCU: ST STM32L072CZT6)
 - bmsboot.bin (MCU: see batteryware.bin)
+- muco-boot.bin (MCU: see mainware.bin)
+- bleboot.bin (MCU: see bleware.bin)
+- shifterboot.bin (MCU: see shifterware.bin)
 
 ## Some observations about firmware images:
 
@@ -40,6 +35,25 @@ The firmware image starts with a magic 0xaa55aa55, followed by these header item
 All 4 byte values are encoded little endian
 
 The CRC is calculated using the STM32 CRC algorithm over the whole image data with the header CRC and length fields both set to 0xffffffff.
+
+## Setup / Installation
+
+You can use a Raspberry Pi, your dusty old Linux Machine or fancy new Stuff like WSL and a Linux Machine (Ubuntu or Debian is fine).  
+Sadly macos does not seem to work.   
+
+```
+apt update
+apt install build-essential gcc-arm-none-eabi binutils-arm-none-eabi
+make
+```
+
+## unpack
+
+usage: `unpack <packfile>`
+
+This tool extracts the contents of a VanMoof update file, also known as PACK file. A PACK file starts with a header containing the magic "PACK", an offset to a directory structure and the length of the directory structure. The directory structure (at the end of the file) contains one or more entries containing a filename, an offset, and the length of the data. See pack.h for details of these structures.
+
+The tool will overwrite any file present in the current directory if this is contained in the PACK file. Run this in a separate directory to be shure not to loose any data.
 
 ## crc32
 
