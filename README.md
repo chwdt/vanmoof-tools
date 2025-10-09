@@ -55,6 +55,12 @@ This tool extracts the contents of a VanMoof update file, also known as PACK fil
 
 The tool will overwrite any file present in the current directory if this is contained in the PACK file. Run this in a separate directory to be shure not to loose any data.
 
+## pack
+
+usage: `pack <packfile> <warefile> [<warefile> ...]`
+
+This tool packs one or more firmware files into a VanMoof update file, also known as PACK file. This is the reverse operation of the `unpack` command.
+
 ## crc32
 
 usage: `crc32 <warefile>`
