@@ -461,7 +461,7 @@ Message format 5:
 
 | M-ID | Cmd | Len | UKEY data | Index | Perms | ... | UKEY data | Index | Perms | Modbus CRC | Padding |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| 00000008 | 0001 | 48 | 98d29703b832207ed7c67b34edfadc02 | 00000002 | 000001f4 | ... | cb27c40df508b19df62e7551127abe79 | 00000004 | 000001f4 | xxxx | 07070707070707 |
+| 00000008 | 0007 | 48 | 98d29703b832207ed7c67b34edfadc02 | 00000002 | 000001f4 | ... | cb27c40df508b19df62e7551127abe79 | 00000004 | 000001f4 | xxxx | 07070707070707 |
 
 Message format 6:
 
