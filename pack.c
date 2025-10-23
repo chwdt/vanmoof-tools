@@ -9,6 +9,7 @@
 #include <endian.h>
 
 #include "pack.h"
+#include "mmap.h" /* for O_BINARY */
 
 static char *progname;
 
@@ -51,7 +52,7 @@ main(int argc, char **argv)
 	}
 	memset(entries, 0, (argc - 2) * sizeof(pack_entry_t));
 
-	out = open(packfile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	out = open(packfile, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, 0666);
 	if (out < 0) {
 		fprintf(stderr, "%s: open(%s): %s\n", progname, packfile, strerror(errno));
 		exit(1);
@@ -68,7 +69,7 @@ main(int argc, char **argv)
 
 	offset = sizeof(header);
 	for (i = 0; i < argc - 2; i++) {
-		fd = open(argv[i + 2], O_RDONLY);
+		fd = open(argv[i + 2], O_RDONLY | O_BINARY);
 		if (fd < 0) {
 			fprintf(stderr, "%s: open(%s): %s\n", progname, argv[i + 2], strerror(errno));
 			exit(1);

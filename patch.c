@@ -7,10 +7,9 @@
 #include <string.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
 
-#include <endian.h>
-
+#include "mmap.h"
+#include "endian.h"
 #include "ware.h"
 
 static char *progname;
@@ -582,7 +581,7 @@ int main(int argc, char** argv)
 		flags |= PATCHSET_FLAG_MODEL;
 	}
 
-	int fd = open(filename, O_RDWR);
+	int fd = open(filename, O_RDWR | O_BINARY);
 	if (fd < 0) {
 		fprintf(stderr, "%s: open(%s): %s\n", progname, filename, strerror(errno));
 		exit(1);

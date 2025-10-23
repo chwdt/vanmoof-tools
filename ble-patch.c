@@ -7,11 +7,11 @@
 #include <string.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
 
-#include <endian.h>
 #include <zlib.h>
 
+#include "mmap.h"
+#include "endian.h"
 #include "ware.h"
 
 static char *progname;

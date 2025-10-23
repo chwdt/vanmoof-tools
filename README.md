@@ -39,13 +39,16 @@ The CRC is calculated using the STM32 CRC algorithm over the whole image data wi
 ## Setup / Installation
 
 You can use a Raspberry Pi, your dusty old Linux Machine or fancy new Stuff like WSL and a Linux Machine (Ubuntu or Debian is fine).  
-Sadly macos does not seem to work.   
 
 ```
 apt update
 apt install build-essential gcc-arm-none-eabi binutils-arm-none-eabi
 make
 ```
+
+On windows, you need to install `mingw32` and the arm-none-eabi compiler toolchain, e.g. gcc 12.3.1 from [arm-eabi toolchains](https://gnutoolchains.com/arm-eabi/), then run `mingw32-make`.
+
+Sadly macos does not seem to work. (Coming soon, hopefully).
 
 ## unpack
 

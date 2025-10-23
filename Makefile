@@ -1,7 +1,7 @@
 CC = gcc
 LDLIBS = -lz
 
-CFLAGS = -O1 -g
+CFLAGS = -O1 -g -I.
 
 ARM_FLAGS = -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
 	-ffreestanding -fno-toplevel-reorder

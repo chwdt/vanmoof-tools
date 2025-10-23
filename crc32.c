@@ -6,11 +6,11 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
 
-#include <endian.h>
 #include <zlib.h>
 
+#include "mmap.h"
+#include "endian.h"
 #include "ware.h"
 
 static char *progname;
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 
 	char *filename = argv[1];
 
-	int fd = open(filename, O_RDONLY);
+	int fd = open(filename, O_RDONLY | O_BINARY);
 	if (fd < 0) {
 		fprintf(stderr, "%s: open(%s): %s\n", progname, filename, strerror(errno));
 		exit(1);

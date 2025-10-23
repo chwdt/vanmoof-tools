@@ -9,6 +9,7 @@
 #include <endian.h>
 
 #include "pack.h"
+#include "mmap.h" /* for O_BINARY */
 
 static char *progname;
 
@@ -44,7 +45,7 @@ main(int argc, char **argv)
 
 	packfile = argv[1];
 
-	fd = open(packfile, O_RDONLY);
+	fd = open(packfile, O_RDONLY | O_BINARY);
 	if (fd < 0) {
 		fprintf(stderr, "%s: open(%s): %s\n", progname, packfile, strerror(errno));
 		exit(1);
@@ -95,7 +96,7 @@ main(int argc, char **argv)
 		printf("file: %s, offset 0x%08x, length 0x%08x\n", entry.filename,
 			le32toh(entry.offset), le32toh(entry.length));
 
-		out = open(entry.filename, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+		out = open(entry.filename, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, 0666);
 		if (out < 0) {
 			fprintf(stderr, "%s: open(%s): %s\n", progname, packfile, strerror(errno));
 			exit(1);
