@@ -6,9 +6,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include <endian.h>
-
 #include "pack.h"
+#include "endian.h"
 #include "mmap.h" /* for O_BINARY */
 
 static char *progname;

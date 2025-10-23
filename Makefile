@@ -1,7 +1,7 @@
 CC = gcc
 LDLIBS = -lz
 
-CFLAGS = -O1 -g -I.
+CFLAGS = -O1 -g
 
 ARM_FLAGS = -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
 	-ffreestanding -fno-toplevel-reorder
@@ -62,4 +62,4 @@ keys2.o: keys.c
 	arm-none-eabi-gcc $(ARM_FLAGS) -DVERSION_2_4_1 -c $< -o $@
 
 clean:
-	rm -f *.o unpack crc32 patch patch-dump
+	rm -f *.o *.hex *.bin *.exe keys1 keys2 pack unpack crc32 patch patch-dump ble-patch
