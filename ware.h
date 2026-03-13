@@ -1,6 +1,19 @@
 #ifndef _WARE_H
 #define _WARE_H 1
 
+#define HEAD_MAGIC 0x96f3b83d
+
+typedef struct {
+        uint32_t magic;
+        uint32_t unknown0;
+        uint32_t offset;
+	uint32_t length;
+	uint32_t unknown1;
+	uint32_t version0;
+	uint32_t version1;
+	uint32_t unknown2;
+} vanmoof_head_t;
+
 #define WARE_MAGIC 0xaa55aa55
 
 #define MAINWARE_OFFSET 0x08020000
