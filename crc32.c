@@ -58,6 +58,35 @@ static uint32_t ware_crc(uint32_t crc, const vanmoof_ware_t *ware, const void *d
 	return crc;
 }
 
+static int test_arm(uint8_t *data, size_t len)
+{
+	if (data[3] != 0x20) // stack pointer must be inside RAM
+		return 0;
+
+	uint32_t *p = (uint32_t *)(data + 4);
+	uint32_t match = 0;
+	int vcount = 0;
+	int mcount = 0;
+
+	// Test for similar vectors
+	for (int i = 0; i < 15; i++) {
+		uint32_t offset = le32toh(p[i]);
+		if (offset) {
+			vcount++;
+			if (match && !((match ^ offset) & 0xffff0000)) {
+				mcount++;
+			} else {
+				match = offset;
+				mcount = 1;
+			}
+		}
+	}
+	if (vcount > 5 && (vcount - mcount) < 2)
+		return 1;
+
+	return 0;
+}
+
 int main(int argc, char** argv)
 {
 	progname = strrchr(argv[0], '/');
@@ -91,12 +120,16 @@ int main(int argc, char** argv)
 
 	close(fd);
 
+	size_t binary_size = st.st_size;
+	uint8_t *binary = (uint8_t *)data;
+
 	vanmoof_ware_t ware;
 	memcpy(&ware, data, sizeof(ware));
 
 	ble_ware_t ble_ware;
 	memcpy(&ble_ware, data, sizeof(ble_ware));
 
+retry:
 	if (le32toh(ware.magic) == WARE_MAGIC) {
 		printf("%s: vanmoof ware magic OK\n", filename);
 		printf("%s: vanmoof ware version %08x\n", filename, le32toh(ware.version));
@@ -167,6 +200,25 @@ int main(int argc, char** argv)
 
 			offset += le32toh(seg.seg_len);
 		}
+	} else if (le32toh(ware.magic) == HEAD_MAGIC) {
+		vanmoof_head_t head;
+		memcpy(&head, data, sizeof(ware));
+		size_t pack_start = le32toh(head.offset);
+		printf("%s: Vanmoof software: Version %d.%d.%d.%d, Offset 0x%x, Length 0x%x\n",
+                        filename, (le32toh(head.version0) >> 0) & 0xff, (le32toh(head.version0) >> 8) & 0xff,
+                        (le32toh(head.version0) >> 16) & 0xff, le32toh(head.version1),
+                        le32toh(head.offset), le32toh(head.length));
+                if (pack_start + le32toh(head.length) < st.st_size) {
+			printf("%s: Vanmoof signature?: Offset 0x%x, Length 0x%x\n", filename,
+				pack_start + le32toh(head.length), st.st_size - pack_start - le32toh(head.length));
+                }
+		memcpy(&ware, data + pack_start, sizeof(ware));
+		memcpy(&ble_ware, data + pack_start, sizeof(ble_ware));
+		binary += pack_start;
+		binary_size = le32toh(head.length);
+		goto retry;
+	} else if (test_arm(binary, binary_size)) {
+		printf("%s: Pure ARM binary, Length 0x%x\n", filename, binary_size);
 	} else {
 		printf("%s: vanmoof ware magic not found, assume boot-loader binary\n", filename);
 
