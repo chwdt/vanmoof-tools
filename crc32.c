@@ -202,7 +202,7 @@ retry:
 		}
 	} else if (le32toh(ware.magic) == HEAD_MAGIC) {
 		vanmoof_head_t head;
-		memcpy(&head, data, sizeof(ware));
+		memcpy(&head, data, sizeof(head));
 		size_t pack_start = le32toh(head.offset);
 		printf("%s: Vanmoof software: Version %d.%d.%d.%d, Offset 0x%x, Length 0x%x\n",
                         filename, (le32toh(head.version0) >> 0) & 0xff, (le32toh(head.version0) >> 8) & 0xff,
