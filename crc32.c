@@ -12,6 +12,7 @@
 #include <zlib.h>
 
 #include <openssl/sha.h>
+#include <openssl/asn1.h>
 
 #include "ware.h"
 
@@ -222,6 +223,7 @@ retry:
 
 				size_t offset = sizeof(image_tlv_t);
 				while (offset < sig_length) {
+					BIO *bio;
 					uint8_t buffer[32];
 					memcpy(&tlv, data + sig_offset + offset, sizeof(image_tlv_t));
 					offset += sizeof(image_tlv_t);
@@ -237,8 +239,11 @@ retry:
 								filename, sig_offset + offset, tlv.length);
 							break;
 						case IMAGE_TLV_ECDSA_SIG:
+							bio = BIO_new_fd(fileno(stdout), BIO_NOCLOSE);
 							printf("%s: Vanmoof signature: ECDSA_SIG at 0x%x, Length 0x%x\n",
 								filename, sig_offset + offset, tlv.length);
+							ASN1_parse_dump(bio, data + sig_offset + offset, tlv.length, 0, -1);
+							BIO_free(bio);
 							break;
 						default:
 							printf("%s: Vanmoof signature: Type 0x%04x at 0x%x, Length 0x%x\n",
