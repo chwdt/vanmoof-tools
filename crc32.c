@@ -83,7 +83,7 @@ static int test_arm(uint8_t *data, size_t len)
 			}
 		}
 	}
-	if (vcount > 5 && (vcount - mcount) < 2)
+	if (vcount > 5 && (vcount - mcount) < 3)
 		return 1;
 
 	return 0;
