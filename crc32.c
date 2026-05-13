@@ -11,6 +11,8 @@
 #include <endian.h>
 #include <zlib.h>
 
+#include <openssl/sha.h>
+
 #include "ware.h"
 
 static char *progname;
@@ -209,8 +211,46 @@ retry:
                         (le32toh(head.version0) >> 16) & 0xff, le32toh(head.version1),
                         le32toh(head.offset), le32toh(head.length));
                 if (pack_start + le32toh(head.length) < st.st_size) {
-			printf("%s: Vanmoof signature?: Offset 0x%x, Length 0x%x\n", filename,
-				pack_start + le32toh(head.length), st.st_size - pack_start - le32toh(head.length));
+			size_t sig_offset = pack_start + le32toh(head.length);
+			size_t sig_length = st.st_size - pack_start - le32toh(head.length);
+			image_tlv_t tlv;
+			memcpy(&tlv, data + sig_offset, sizeof(image_tlv_t));
+
+			if ((tlv.type == IMAGE_TLV_INFO_MAGIC) && (tlv.length == sig_length)) {
+				printf("%s: Vanmoof signature: Offset 0x%x, Magic 0x%x, Length 0x%x\n",
+				       filename, sig_offset, tlv.type, tlv.length);
+
+				size_t offset = sizeof(image_tlv_t);
+				while (offset < sig_length) {
+					uint8_t buffer[32];
+					memcpy(&tlv, data + sig_offset + offset, sizeof(image_tlv_t));
+					offset += sizeof(image_tlv_t);
+					switch (tlv.type) {
+						case IMAGE_TLV_SHA256:
+							SHA256(data, sig_offset, buffer);
+							printf("%s: Vanmoof signature: SHA256 at 0x%x, Length 0x%x: %s\n",
+								filename, sig_offset + offset, tlv.length,
+								memcmp(buffer, data + sig_offset + offset, tlv.length) == 0 ? "OK" : "FAIL");
+							break;
+						case IMAGE_TLV_KEYHASH:
+							printf("%s: Vanmoof signature: KEYHASH at 0x%x, Length 0x%x\n",
+								filename, sig_offset + offset, tlv.length);
+							break;
+						case IMAGE_TLV_ECDSA_SIG:
+							printf("%s: Vanmoof signature: ECDSA_SIG at 0x%x, Length 0x%x\n",
+								filename, sig_offset + offset, tlv.length);
+							break;
+						default:
+							printf("%s: Vanmoof signature: Type 0x%04x at 0x%x, Length 0x%x\n",
+								filename, tlv.type, sig_offset + offset, tlv.length);
+							break;
+					}
+					offset += tlv.length;
+				}
+			} else {
+				printf("%s: Unknown trailer: Offset 0x%x, Length 0x%x, Magic 0x%x\n",
+				       filename, sig_offset, sig_length, tlv.type);
+			}
                 }
 		memcpy(&ware, data + pack_start, sizeof(ware));
 		memcpy(&ble_ware, data + pack_start, sizeof(ble_ware));

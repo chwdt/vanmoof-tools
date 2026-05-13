@@ -74,4 +74,15 @@ typedef struct {
 	uint32_t start_addr;
 } ble_ware_code_seg_t;
 
+#define IMAGE_TLV_INFO_MAGIC	0x6907
+#define IMAGE_TLV_SHA256	0x0010
+#define IMAGE_TLV_KEYHASH	0x0001
+#define IMAGE_TLV_ECDSA_SIG	0x0022
+
+typedef struct {
+	uint16_t type;
+	uint16_t length;
+	uint8_t data[0];
+} image_tlv_t;
+
 #endif

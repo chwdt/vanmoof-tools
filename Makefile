@@ -1,5 +1,5 @@
 CC = gcc
-LDLIBS = -lz
+LDLIBS = -lz -lcrypto
 
 CFLAGS = -O1 -g
 
