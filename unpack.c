@@ -16,7 +16,7 @@ static char *progname;
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: %s <packfile>\n", progname);
+	fprintf(stderr, "usage: %s [-l] <packfile>\n", progname);
 	exit(1);
 }
 
@@ -34,12 +34,27 @@ main(int argc, char **argv)
 	size_t total;
 	ssize_t n, m;
 	int i;
+	int list_only = 0;
 
 	progname = strrchr(argv[0], '/');
 	if (progname)
 		progname++;
 	else
 		progname = argv[0];
+
+	while (argc > 1 && argv[1][0] == '-') {
+		if (strcmp(argv[1], "-l") == 0) {
+			list_only = 1;
+			argc--;
+			argv++;
+		} else if (strcmp(argv[1], "--") == 0) {
+			argc--;
+			argv++;
+			break;
+		} else {
+			usage();
+		}
+	}
 
 	if (argc < 2)
 		usage();
@@ -128,37 +143,39 @@ retry:
 		printf("file: %s, offset 0x%08x, length 0x%08x\n", entry.filename,
 			le32toh(entry.offset), le32toh(entry.length));
 
-		out = open(entry.filename, O_WRONLY|O_CREAT|O_TRUNC, 0666);
-		if (out < 0) {
-			fprintf(stderr, "%s: open(%s): %s\n", progname, packfile, strerror(errno));
-			exit(1);
-		}
-
-		n = lseek(fd, le32toh(entry.offset) + pack_start, SEEK_SET);
-		if (n != le32toh(entry.offset) + pack_start) {
-			fprintf(stderr, "%s: seek(%u): %zd\n", progname, le32toh(entry.offset) + pack_start, n);
-			exit(1);
-		}
-
-		total = 0;
-		while (total < le32toh(entry.length)) {
-			m = le32toh(entry.length) - total;
-			if (m > sizeof(buffer))
-				m = sizeof(buffer);
-			n = read(fd, buffer, m);
-			if (n != m) {
-				fprintf(stderr, "%s: read(%zu): %zd\n", progname, m, n);
+		if (!list_only) {
+			out = open(entry.filename, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+			if (out < 0) {
+				fprintf(stderr, "%s: open(%s): %s\n", progname, packfile, strerror(errno));
 				exit(1);
 			}
-			n = write(out, buffer, m);
-			if (n != m) {
-				fprintf(stderr, "%s: write(%zu): %zd\n", progname, m, n);
+
+			n = lseek(fd, le32toh(entry.offset) + pack_start, SEEK_SET);
+			if (n != le32toh(entry.offset) + pack_start) {
+				fprintf(stderr, "%s: seek(%u): %zd\n", progname, le32toh(entry.offset) + pack_start, n);
 				exit(1);
 			}
-			total += n;
-		}
 
-		close(out);
+			total = 0;
+			while (total < le32toh(entry.length)) {
+				m = le32toh(entry.length) - total;
+				if (m > sizeof(buffer))
+					m = sizeof(buffer);
+				n = read(fd, buffer, m);
+				if (n != m) {
+					fprintf(stderr, "%s: read(%zu): %zd\n", progname, m, n);
+					exit(1);
+				}
+				n = write(out, buffer, m);
+				if (n != m) {
+					fprintf(stderr, "%s: write(%zu): %zd\n", progname, m, n);
+					exit(1);
+				}
+				total += n;
+			}
+
+			close(out);
+		}
 
 		offset += sizeof(entry);
 	}
