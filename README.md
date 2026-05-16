@@ -49,15 +49,18 @@ make
 
 ## unpack
 
-usage: `unpack [-l] <packfile>`
+usage: `unpack [-l] [-h] <packfile>`
 
 This tool extracts the contents of a VanMoof update file, also known as PACK file. A PACK file starts with a header containing the magic "PACK", an offset to a directory structure and the length of the directory structure. The directory structure (at the end of the file) contains one or more entries containing a filename, an offset, and the length of the data. See pack.h for details of these structures.
+
+If the PACK file (or its enclosing HEAD wrapper) has a TLV signature trailer (same format as parsed by `crc32`), the SHA256, KEYHASH and ECDSA_SIG entries are printed and the SHA256 is verified.
 
 The tool will overwrite any file present in the current directory if this is contained in the PACK file. Run this in a separate directory to be shure not to loose any data.
 
 ### Options:
 
 - `-l`: List the PACK file contents only, do not extract any files.
+- `-h`: Show file sizes as human readable (KiB / MiB) instead of hex.
 
 ## pack
 
