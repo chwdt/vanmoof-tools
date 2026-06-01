@@ -625,7 +625,7 @@ int main(int argc, char** argv)
 		if (crc != le32toh(ware.crc))
 			exit(1);
 
-		switch (le32toh(ware.version)) {
+		switch ((ware.version[3] << 24) | (ware.version[2] << 16) | (ware.version[1] << 8) | ware.version[0]) {
 		case 0x010903f4:
 			patchset_1_9_3.flags = flags;
 			if ((le32toh(ware.crc) == 0x76c1ab9d) && (length == 0x0002fcc8)) {

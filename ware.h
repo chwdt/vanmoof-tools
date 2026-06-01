@@ -16,11 +16,19 @@ typedef struct {
 
 #define WARE_MAGIC 0xaa55aa55
 
+enum WARE_TYPE {
+	MOTOR = 0xa1,
+	BATTERY = 0xb1,
+	POWERBANK = 0xb2,
+	SHIFTER = 0xc1,
+	MAIN = 0xf4,
+};
+
 #define MAINWARE_OFFSET 0x08020000
 
 typedef struct {
 	uint32_t magic;
-	uint32_t version;
+	uint8_t version[4];
 	uint32_t crc;
 	uint32_t length;
 	char date[12];

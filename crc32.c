@@ -134,8 +134,17 @@ int main(int argc, char** argv)
 
 retry:
 	if (le32toh(ware.magic) == WARE_MAGIC) {
+		char *type = "UNKNOWN";
+		switch (ware.version[0]) {
+			case MOTOR: type = "MOTOR"; break;
+			case BATTERY: type = "BATTERY"; break;
+			case POWERBANK: type = "POWERBANK"; break;
+			case SHIFTER: type = "SHIFTER"; break;
+			case MAIN: type = "MAIN"; break;
+		}
 		printf("%s: vanmoof ware magic OK\n", filename);
-		printf("%s: vanmoof ware version %08x\n", filename, le32toh(ware.version));
+		printf("%s: vanmoof ware version %d.%d.%d (0x%02x == %s)\n", filename,
+			ware.version[3], ware.version[2], ware.version[1], ware.version[0], type);
 		printf("%s: vanmoof ware CRC 0x%08x\n", filename, le32toh(ware.crc));
 		printf("%s: vanmoof ware length 0x%08x\n", filename, le32toh(ware.length));
 		printf("%s: vanmoof ware date %s\n", filename, ware.date);
