@@ -75,7 +75,7 @@ async def update():
     # print('Getting key from vanmoof servers')
     # key, user_key_id = retrieve_encryption_key.query()
 
-    # Insert your API key here:
+    # Insert your BLE key (UKEY) here:
     key = '5f5f5f5f5f4f574e45525f5045524d53'
 
     user_key_id = 1
