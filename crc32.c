@@ -61,6 +61,21 @@ static int bootloader_trailer(const void *data, size_t size, uint32_t *crc_out, 
 	return *crc_out == *expected_out;
 }
 
+/*
+ * Some bootloaders (e.g. the CC2642 bleboot) embed a "BVER" build stamp:
+ * the tag, then __DATE__ (12 B) and __TIME__ (null-terminated), then 3
+ * version bytes major.minor.patch. Returns a pointer to the tag or NULL.
+ */
+static const uint8_t *find_bytes(const uint8_t *data, size_t size, const char *tag, size_t tl)
+{
+	if (size < tl)
+		return NULL;
+	for (size_t i = 0; i + tl <= size; i++)
+		if (memcmp(data + i, tag, tl) == 0)
+			return data + i;
+	return NULL;
+}
+
 static uint32_t ware_crc(uint32_t crc, const vanmoof_ware_t *ware, const void *data, size_t length)
 {
 	vanmoof_ware_t tmp;
@@ -309,6 +324,21 @@ retry:
 				else
 					printf("%s: bootloader CRC not set (loader is not self-CRC'd)\n", filename);
 			}
+		}
+
+		/* CC2642 bleboot-style "BVER" build stamp (tag, __DATE__ (12 B),
+		 * null-terminated __TIME__, then 3 version bytes major.minor.patch).
+		 * The image integrity CRC for these lives in the TI OAD "OAD NVM1"
+		 * image header, not in a VanMoof trailer. */
+		const uint8_t *bver = find_bytes(binary, binary_size, "BVER", 4);
+		if (bver) {
+			const uint8_t *end = binary + binary_size;
+			const char *date = (const char *)(bver + 4);
+			const char *time = date + strnlen(date, end - (const uint8_t *)date) + 1;
+			const uint8_t *ver = (const uint8_t *)time + strnlen(time, end - (const uint8_t *)time) + 1;
+			if (ver + 3 <= end)
+				printf("%s: BVER version %u.%u.%u (%.12s %s)\n", filename,
+					ver[0], ver[1], ver[2], date, time);
 		}
 	} else {
 		printf("%s: vanmoof ware magic not found, assume boot-loader binary\n", filename);

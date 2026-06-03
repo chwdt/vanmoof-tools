@@ -15,7 +15,7 @@ patch: patch.o
 patch-dump: patch-dump.o
 ble-patch: ble-patch.o
 
-pack.o: pack.c pack.h
+pack.o: pack.c pack.h ware.h
 unpack.o: unpack.c pack.h ware.h
 crc32.o: crc32.c ware.h
 patch.o: patch.c ware.h

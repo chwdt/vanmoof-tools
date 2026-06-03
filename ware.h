@@ -1,6 +1,8 @@
 #ifndef _WARE_H
 #define _WARE_H 1
 
+#include <stdint.h>
+
 #define HEAD_MAGIC 0x96f3b83d
 
 typedef struct {
