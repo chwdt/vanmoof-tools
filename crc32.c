@@ -46,6 +46,21 @@ static uint32_t crc32_calculate(uint32_t crc, const void *data, size_t length)
 	return crc;
 }
 
+/*
+ * VanMoof bootloaders are pure ARM images with an 8-byte trailer: a
+ * 3-character ASCII version (e.g. "007") followed by a CRC-32 over the rest
+ * of the image. Returns 1 when the trailing CRC validates (i.e. it really is
+ * a VanMoof bootloader, so the version is meaningful).
+ */
+static int bootloader_trailer(const void *data, size_t size, uint32_t *crc_out, uint32_t *expected_out)
+{
+	if (size < 2 * sizeof(uint32_t))
+		return 0;
+	*expected_out = le32toh(*(const uint32_t *)((const uint8_t *)data + size - sizeof(uint32_t)));
+	*crc_out = crc32_calculate(initial_crc, data, size - sizeof(uint32_t));
+	return *crc_out == *expected_out;
+}
+
 static uint32_t ware_crc(uint32_t crc, const vanmoof_ware_t *ware, const void *data, size_t length)
 {
 	vanmoof_ware_t tmp;
@@ -134,17 +149,10 @@ int main(int argc, char** argv)
 
 retry:
 	if (le32toh(ware.magic) == WARE_MAGIC) {
-		char *type = "UNKNOWN";
-		switch (ware.version[0]) {
-			case MOTOR: type = "MOTOR"; break;
-			case BATTERY: type = "BATTERY"; break;
-			case POWERBANK: type = "POWERBANK"; break;
-			case SHIFTER: type = "SHIFTER"; break;
-			case MAIN: type = "MAIN"; break;
-		}
 		printf("%s: vanmoof ware magic OK\n", filename);
-		printf("%s: vanmoof ware version %d.%d.%d (0x%02x == %s)\n", filename,
-			ware.version[3], ware.version[2], ware.version[1], ware.version[0], type);
+		printf("%s: vanmoof ware version %x.%x.%x (0x%02x == %s)\n", filename,
+			ware.version[3], ware.version[2], ware.version[1], ware.version[0],
+			ware_type_name(ware.version[0]));
 		printf("%s: vanmoof ware CRC 0x%08x\n", filename, le32toh(ware.crc));
 		printf("%s: vanmoof ware length 0x%08x\n", filename, le32toh(ware.length));
 		printf("%s: vanmoof ware date %s\n", filename, ware.date);
@@ -273,20 +281,47 @@ retry:
 		goto retry;
 	} else if (test_arm(binary, binary_size)) {
 		printf("%s: Pure ARM binary, Length 0x%x\n", filename, binary_size);
+
+		/* A bootloader is also a pure ARM image; report its version+CRC
+		 * trailer when present (older bootloaders, e.g. BL V004, leave it
+		 * blank and the CRC won't validate — then it's just a plain ARM
+		 * binary and we say nothing further). */
+		uint32_t crc, expected_crc;
+		if (bootloader_trailer(binary, binary_size, &crc, &expected_crc)) {
+			uint8_t *version = (uint8_t *)binary + binary_size - 2 * sizeof(uint32_t);
+			printf("%s: bootloader version %c%c%c\n", filename, version[3], version[2], version[1]);
+			printf("%s: bootloader CRC 0x%08x OK\n", filename, crc);
+		}
+
+		/* mainboot (muco-boot) carries a vanmoof_ware_t in the LAST 0x28
+		 * bytes instead of at the start: magic, version (major.minor in
+		 * version[3]/[2]), then date/time. Its crc/length are left unset
+		 * (0xffffffff) — the loader is not self-CRC'd; it CRC-checks the
+		 * application images instead. */
+		if ((size_t)binary_size >= sizeof(vanmoof_ware_t)) {
+			vanmoof_ware_t foot;
+			memcpy(&foot, binary + binary_size - sizeof(foot), sizeof(foot));
+			if (le32toh(foot.magic) == WARE_MAGIC) {
+				printf("%s: bootloader version %x.%02x (%.12s %.12s)\n", filename,
+					foot.version[3], foot.version[2], foot.date, foot.time);
+				if (le32toh(foot.crc) != 0xffffffff)
+					printf("%s: bootloader CRC 0x%08x\n", filename, le32toh(foot.crc));
+				else
+					printf("%s: bootloader CRC not set (loader is not self-CRC'd)\n", filename);
+			}
+		}
 	} else {
 		printf("%s: vanmoof ware magic not found, assume boot-loader binary\n", filename);
 
-		uint32_t expected_crc = le32toh(*(uint32_t *)(data + st.st_size - sizeof(uint32_t)));
-		uint8_t *version = (uint8_t *)(data + st.st_size - 2 * sizeof(uint32_t));
+		uint32_t crc, expected_crc;
+		int ok = bootloader_trailer(data, st.st_size, &crc, &expected_crc);
+		uint8_t *version = (uint8_t *)data + st.st_size - 2 * sizeof(uint32_t);
 
-		printf("%s: version %c%c%c\n", filename, version[3], version[2], version[1]);
+		printf("%s: bootloader version %c%c%c\n", filename, version[3], version[2], version[1]);
 		printf("%s: expected CRC 0x%08x\n", filename, expected_crc);
+		printf("%s: CRC 0x%08x %s\n", filename, crc, ok ? "OK" : "FAIL");
 
-		uint32_t crc = crc32_calculate(initial_crc, data, st.st_size - sizeof(uint32_t));
-
-		printf("%s: CRC 0x%08x %s\n", filename, crc, crc == expected_crc ? "OK" : "FAIL");
-
-		if (crc != expected_crc)
+		if (!ok)
 			exit(1);
 	}
 

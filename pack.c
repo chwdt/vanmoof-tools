@@ -9,6 +9,7 @@
 #include <endian.h>
 
 #include "pack.h"
+#include "ware.h"
 
 static char *progname;
 
@@ -90,6 +91,21 @@ main(int argc, char **argv)
 
 		printf("file: %s, offset 0x%08x, length 0x%08x\n", entries[i].filename,
 			le32toh(entries[i].offset), le32toh(entries[i].length));
+
+		/* Parse the firmware header so the packed version is reported. */
+		vanmoof_ware_t ware;
+		if (st.st_size >= (off_t)sizeof(ware) &&
+		    read(fd, &ware, sizeof(ware)) == (ssize_t)sizeof(ware) &&
+		    le32toh(ware.magic) == WARE_MAGIC) {
+			printf("      version %x.%x.%x (0x%02x == %s), %.12s %.12s\n",
+				ware.version[3], ware.version[2], ware.version[1],
+				ware.version[0], ware_type_name(ware.version[0]),
+				ware.date, ware.time);
+		}
+		if (lseek(fd, 0, SEEK_SET) != 0) {
+			fprintf(stderr, "%s: lseek(%s): %s\n", progname, argv[i + 2], strerror(errno));
+			exit(1);
+		}
 
 		total = 0;
 		while (total < st.st_size) {

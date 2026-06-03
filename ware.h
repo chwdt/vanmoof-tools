@@ -24,6 +24,18 @@ enum WARE_TYPE {
 	MAIN = 0xf4,
 };
 
+static inline const char *ware_type_name(uint8_t type)
+{
+	switch (type) {
+		case MOTOR:     return "MOTOR";
+		case BATTERY:   return "BATTERY";
+		case POWERBANK: return "POWERBANK";
+		case SHIFTER:   return "SHIFTER";
+		case MAIN:      return "MAIN";
+		default:        return "UNKNOWN";
+	}
+}
+
 #define MAINWARE_OFFSET 0x08020000
 
 typedef struct {
