@@ -36,6 +36,47 @@ All 4 byte values are encoded little endian
 
 The CRC is calculated using the STM32 CRC algorithm over the whole image data with the header CRC and length fields both set to 0xffffffff.
 
+## VanMoof S5/A5/S6/S6 Open firmware images (VMFW)
+
+The S5/A5 generation uses a different container for its Cortex-M ECU images
+(`user_ecu`, `imx8_bridge`, `elock`, `eshifter`, `frontlight`, `rearlight`,
+`motor_sensor`, `power_control`, `power_pedal`). Each `.bin` is the whole
+flashable image (the updater streams it page by page); instead of a magic at
+offset 0, a `VMFW` header sits at a fixed offset **0x134**, right after the
+Cortex-M vector table. The header items are:
+
+- 4 bytes magic "VMFW"
+- 4 bytes version info
+- 4 bytes CRC32
+- 4 bytes length
+- 12 bytes date in ASCII (`__DATE__`, e.g. "Jan 29 2024")
+- 12 bytes time in ASCII (`__TIME__`, e.g. "14:50:32", 9 bytes used)
+
+All 4 byte values are encoded little endian. The length is authoritative — it is
+the size of the image that is CRC'd and flashed; for the shipped device files it
+equals the exact file size. `crc32` enforces it: a length that runs past the file
+is treated as a truncated/corrupt image and fails, while any bytes past `length`
+(e.g. an appended signature) are excluded from the CRC. The version word is packed
+exactly like `manifest.txt`:
+`major << 24 | minor << 16 | (variant & 7) << 13 | (patch & 0x1fff)`, where the
+variant is `1` dev, `2` rc, `3` main, `0` untagged (e.g. `0x01056000` reads as
+`1.5.0 main`).
+
+Unlike the S3/X3 images, the CRC here is the **standard CRC-32** (zlib /
+Ethernet poly 0x04c11db7, reflected, init and final-xor 0xffffffff — what
+`crc32(3)` from zlib computes), again over the image (its `length` bytes) with
+the header CRC and length fields both set to 0xffffffff.
+
+The **S6** generation reuses the same `VMFW` magic/CRC/length but a different
+header tail: instead of `__DATE__`/`__TIME__` it carries a 4-byte build number
+followed by a `"vMAJOR.MINOR.PATCH.BUILD"` version string, and the version word
+is plain bytes `major.minor.patch` (e.g. `0x00080801` with build `4974` reads as
+`1.8.8 build 4974`, "v1.8.8.4974"). `crc32` detects the dialect from that version
+string; the CRC algorithm is identical.
+
+The Nordic parts (`ble`, `modem`) instead carry an MCUboot header at offset 0,
+and `motor_control` uses its own non-standard header; these are not VMFW images.
+
 ## Setup / Installation
 
 You can use a Raspberry Pi, your dusty old Linux Machine or fancy new Stuff like WSL and a Linux Machine (Ubuntu or Debian is fine).  
@@ -72,7 +113,7 @@ This tool packs one or more firmware files into a VanMoof update file, also know
 
 usage: `crc32 <warefile>`
 
-This tool calculates and verifies the CRC of both boot loader and firmware images.
+This tool calculates and verifies the CRC of both boot loader and firmware images. It auto-detects the container and recurses into wrappers: S3/X3 `vanmoof_ware_t` images (magic 0xaa55aa55), the `HEAD` signature wrapper (TLV trailer with SHA256/KEYHASH/ECDSA_SIG), `PACK` bundles (each contained ware is listed and CRC-checked individually; a bundled `animations.pak` is summarised rather than descended into), BLE OAD images, plain ARM bootloaders, and the S5/A5 and S6 `VMFW` images described above. A signed S6/S3 update `.pak` is a `HEAD`-wrapped `PACK`, so running `crc32` on it verifies the wrapper signature and then every firmware inside. Formats it cannot verify (e.g. the raw battery payload or the nRF `.cbor` modem image) are reported as "cannot verify" rather than failing.
 
 ## patch
 
