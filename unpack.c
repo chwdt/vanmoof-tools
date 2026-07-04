@@ -158,6 +158,12 @@ main(int argc, char **argv)
 			human = 1;
 			argc--;
 			argv++;
+		} else if (strcmp(argv[1], "-d") == 0) {
+			if (argc < 3)
+				usage();
+			outdir = argv[2];
+			argc -= 2;
+			argv += 2;
 		} else if (strcmp(argv[1], "--") == 0) {
 			argc--;
 			argv++;
@@ -181,6 +187,17 @@ main(int argc, char **argv)
 	if (fstat(fd, &st) < 0) {
 		fprintf(stderr, "%s: fstat(%s): %s\n", progname, packfile, strerror(errno));
 		exit(1);
+	}
+
+	if (outdir && !list_only) {
+		if (mkdir(outdir, 0777) < 0 && errno != EEXIST) {
+			fprintf(stderr, "%s: mkdir(%s): %s\n", progname, outdir, strerror(errno));
+			exit(1);
+		}
+		if (chdir(outdir) < 0) {
+			fprintf(stderr, "%s: chdir(%s): %s\n", progname, outdir, strerror(errno));
+			exit(1);
+		}
 	}
 
 retry:
