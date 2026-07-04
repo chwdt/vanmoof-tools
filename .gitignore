@@ -10,3 +10,6 @@ keys1
 keys2
 *.bin
 *.hex
+*.pak
+*.cbor
+*.elf

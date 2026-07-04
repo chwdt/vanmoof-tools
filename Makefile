@@ -6,6 +6,8 @@ CFLAGS = -O1 -g
 ARM_FLAGS = -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
 	-ffreestanding -fno-toplevel-reorder
 
+# backupcode: the three-digit handlebar unlock code to store (decimal 0..999).
+BACKUP_CODE ?= 123
 all: pack unpack crc32 patch patch-dump ble-patch
 
 pack: pack.o
@@ -61,5 +63,18 @@ keys1.o: keys.c
 keys2.o: keys.c
 	arm-none-eabi-gcc $(ARM_FLAGS) -DVERSION_2_4_1 -c $< -o $@
 
+# One-shot mainware-slot payload that writes the owner backup code into config
+# flash (BLE-dead recovery). Build: `make backupcode.bin BACKUP_CODE=123`, then
+# upload backupcode.bin into the mainware slot over Y-modem.
+backupcode.o: backupcode.c
+	arm-none-eabi-gcc $(ARM_FLAGS) -DBACKUP_CODE=$(BACKUP_CODE) -c $< -o $@
+
+backupcode.elf: backupcode.o backupcode.ld
+	arm-none-eabi-ld -T backupcode.ld -o $@ backupcode.o
+
+backupcode.bin: backupcode.elf
+	arm-none-eabi-objcopy -O binary $< $@
+	$(STAMP) $@
+
 clean:
-	rm -f *.o unpack crc32 patch patch-dump
+	rm -f *.o unpack crc32 patch patch-dump backupcode.elf backupcode.bin
