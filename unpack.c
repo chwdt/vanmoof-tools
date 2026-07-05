@@ -142,6 +142,7 @@ main(int argc, char **argv)
 	int i;
 	int list_only = 0;
 	int signature_parsed = 0;
+	char *outdir = NULL;
 
 	progname = strrchr(argv[0], '/');
 	if (progname)
