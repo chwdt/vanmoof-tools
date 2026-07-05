@@ -607,7 +607,9 @@ int main(int argc, char** argv)
 
 	if (le32toh(ware.magic) == WARE_MAGIC) {
 		printf("%s: vanmoof ware magic OK\n", filename);
-		printf("%s: vanmoof ware version %08x\n", filename, le32toh(ware.version));
+		printf("%s: vanmoof ware version %08x\n", filename,
+			((uint32_t)ware.version[3] << 24) | (ware.version[2] << 16) |
+			(ware.version[1] << 8) | ware.version[0]);
 		printf("%s: vanmoof ware CRC 0x%08x\n", filename, le32toh(ware.crc));
 		printf("%s: vanmoof ware length 0x%08x\n", filename, le32toh(ware.length));
 
