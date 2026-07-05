@@ -84,7 +84,7 @@ Sadly macos does not seem to work.
 
 ```
 apt update
-apt install build-essential gcc-arm-none-eabi binutils-arm-none-eabi
+apt install build-essential gcc-arm-none-eabi binutils-arm-none-eabi libssl-dev
 make
 ```
 
@@ -112,9 +112,11 @@ This tool packs one or more firmware files into a VanMoof update file, also know
 
 ## crc32
 
-usage: `crc32 <warefile>`
+usage: `crc32 [-w] <warefile>`
 
 This tool calculates and verifies the CRC of both boot loader and firmware images. It auto-detects the container and recurses into wrappers: S3/X3 `vanmoof_ware_t` images (magic 0xaa55aa55), the `HEAD` signature wrapper (TLV trailer with SHA256/KEYHASH/ECDSA_SIG), `PACK` bundles (each contained ware is listed and CRC-checked individually; a bundled `animations.pak` is summarised rather than descended into), BLE OAD images, plain ARM bootloaders, and the S5/A5 and S6 `VMFW` images described above. A signed S6/S3 update `.pak` is a `HEAD`-wrapped `PACK`, so running `crc32` on it verifies the wrapper signature and then every firmware inside. Formats it cannot verify (e.g. the raw battery payload or the nRF `.cbor` modem image) are reported as "cannot verify" rather than failing.
+
+With `-w` the tool **finalises** an application ware (magic `0xaa55aa55`) in place instead of only checking it: it sets the length field to the file size and writes the correct CRC-32 — computed with the same `ware_crc` it verifies with — into the header, then re-verifies. This is the post-build stamp step for self-built images: a ware's `Makefile` runs `crc32 -w` on the `objcopy` output so the boot loader accepts it (e.g. `backupcode` uses it as its `STAMP`). Inputs without the ware magic are left untouched.
 
 ## patch
 

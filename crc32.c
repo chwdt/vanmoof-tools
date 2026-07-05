@@ -13,6 +13,7 @@
 #include <endian.h>
 #include <zlib.h>
 
+#include <openssl/evp.h>
 #include <openssl/sha.h>
 #include <openssl/asn1.h>
 
@@ -286,7 +287,7 @@ static int analyze(const char *prefix, uint8_t *img, size_t size, int depth, int
 					offset += sizeof(image_tlv_t);
 					switch (tlv.type) {
 						case IMAGE_TLV_SHA256:
-							SHA256(img, sig_offset, buffer);
+							EVP_Digest(img, sig_offset, buffer, NULL, EVP_sha256(), NULL);
 							printf("%s: Vanmoof signature: SHA256 at 0x%zx, Length 0x%x: %s\n",
 								prefix, sig_offset + offset, tlv.length,
 								memcmp(buffer, img + sig_offset + offset, tlv.length) == 0 ? "OK" : "FAIL");

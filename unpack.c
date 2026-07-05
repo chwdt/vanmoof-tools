@@ -8,7 +8,8 @@
 
 #include <endian.h>
 
-#include <openssl/sha.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>    /* SHA256_DIGEST_LENGTH */
 #include <openssl/asn1.h>
 
 #include "pack.h"
@@ -20,7 +21,7 @@ static int human = 0;
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-l] [-h] <packfile>\n", progname);
+	fprintf(stderr, "usage: %s [-l] [-h] [-d <dir>] <packfile>\n", progname);
 	exit(1);
 }
 
@@ -47,7 +48,7 @@ parse_signature(int fd, size_t sig_offset, size_t sig_length)
 	image_tlv_t tlv;
 	uint8_t value[256];
 	uint8_t sha[SHA256_DIGEST_LENGTH];
-	SHA256_CTX sha_ctx;
+	EVP_MD_CTX *sha_ctx;
 	size_t offset;
 	size_t remaining;
 	ssize_t n;
@@ -68,19 +69,25 @@ parse_signature(int fd, size_t sig_offset, size_t sig_length)
 	printf("%s: Vanmoof signature: Offset 0x%zx, Magic 0x%x, Length 0x%x\n",
 		progname, sig_offset, tlv.type, tlv.length);
 
-	SHA256_Init(&sha_ctx);
-	if (lseek(fd, 0, SEEK_SET) != 0)
+	sha_ctx = EVP_MD_CTX_new();
+	EVP_DigestInit_ex(sha_ctx, EVP_sha256(), NULL);
+	if (lseek(fd, 0, SEEK_SET) != 0) {
+		EVP_MD_CTX_free(sha_ctx);
 		return 1;
+	}
 	remaining = sig_offset;
 	while (remaining > 0) {
 		size_t to_read = remaining < sizeof(buffer) ? remaining : sizeof(buffer);
 		n = read(fd, buffer, to_read);
-		if (n <= 0)
+		if (n <= 0) {
+			EVP_MD_CTX_free(sha_ctx);
 			return 1;
-		SHA256_Update(&sha_ctx, buffer, n);
+		}
+		EVP_DigestUpdate(sha_ctx, buffer, n);
 		remaining -= n;
 	}
-	SHA256_Final(sha, &sha_ctx);
+	EVP_DigestFinal_ex(sha_ctx, sha, NULL);
+	EVP_MD_CTX_free(sha_ctx);
 
 	offset = sizeof(image_tlv_t);
 	while (offset < sig_length) {
