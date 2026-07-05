@@ -40,9 +40,10 @@
  *   rewrite both banks (which also heals the divergence). Every other
  *   setting (region, model/e-shifter/display bits, hw revision, volumes,
  *   assist curves, dark threshold) is preserved byte-for-byte. It then prints
- *   the result on muco-boot's console UART (USART1, 115200) and halts;
- *   press ESC into the bootloader and re-upload the real mainware -- the new
- *   code is already stored and the real firmware picks it up on next boot.
+ *   the result on muco-boot's console UART (USART1, 115200) and waits for ESC;
+ *   pressing ESC system-resets back into muco-boot (whose own ESC-to-shell then
+ *   lets you re-upload the real mainware) -- the new code is already stored in
+ *   config flash and the real firmware picks it up on next boot.
  *
  * Config record layout (0x34 words = 0xD0 bytes, mirrors the OEM
  * config_persist_dual_bank record; ctx offsets in the decomp / README):
@@ -106,8 +107,9 @@ typedef unsigned int   uint32_t;
 #define IWDG_KR (*(volatile uint32_t *)0x40003000u)
 #define IWDG_RELOAD 0xAAAAu
 
-/* system control block: AIRCR system-reset request (unused; we halt instead). */
+/* system control block: AIRCR SYSRESETREQ -- reset the CPU back into muco-boot. */
 #define SCB_AIRCR (*(volatile uint32_t *)0xE000ED0Cu)
+#define SCB_AIRCR_SYSRESET 0x05FA0004u   /* VECTKEY 0x5FA | SYSRESETREQ (bit2) */
 
 /* USART1 -- muco-boot's console/YModem UART (the only USART its image
  * references). It is already clocked and configured (115200 8N1) when the
@@ -116,9 +118,13 @@ typedef unsigned int   uint32_t;
 #define USART1_SR  (*(volatile uint32_t *)0x40011000u)
 #define USART1_DR  (*(volatile uint32_t *)0x40011004u)
 #define USART1_CR1 (*(volatile uint32_t *)0x4001100Cu)
-#define USART_SR_TXE (1u << 7)
+#define USART_SR_TXE  (1u << 7)
+#define USART_SR_TC   (1u << 6)
+#define USART_SR_RXNE (1u << 5)
 #define USART_CR1_UE (1u << 13)
 #define USART_CR1_TE (1u << 3)
+#define USART_CR1_RE (1u << 2)
+#define KEY_ESC 0x1B
 
 /*
  * MPEG-2 CRC-32 (poly 0x04C11DB7, init 0xFFFFFFFF, no reflection, over
@@ -239,11 +245,21 @@ static void uart_put_u16(uint16_t v)
 		uart_putc(buf[--n]);
 }
 
+/* Wait for the last byte to fully leave the shift register (TC) so a reset
+ * right after doesn't truncate the message. Bounded: a dead UART can't block. */
+static void uart_flush(void)
+{
+	uint32_t guard = 0x400000u;
+
+	while (!(USART1_SR & USART_SR_TC) && guard)
+		guard--;
+}
+
 void reset_handler(void)
 {
 	uint32_t rec[RECORD_WORDS];
 	const volatile uint32_t *src;
-	int a_ok, b_ok, differ;
+	int a_ok, b_ok, differ, wrote = 0;
 	uint32_t i;
 
 	/* muco-boot's vector table is still active; keep IRQs off across the
@@ -263,7 +279,12 @@ void reset_handler(void)
 	else
 		src = 0;   /* no trustworthy record to preserve -- do nothing */
 
-	if (src) {
+	/* Write only when it isn't already exactly right (both banks valid,
+	 * identical, code already ours). This stops the reset-loop below from
+	 * erasing/reprogramming flash on every pass while the operator catches the
+	 * boot loader. */
+	if (src && !(a_ok && b_ok && !differ &&
+	             (uint16_t)(src[3] & 0xFFFFu) == (uint16_t)(BACKUP_CODE))) {
 		for (i = 0; i < RECORD_WORDS; i++)
 			rec[i] = src[i];
 
@@ -279,39 +300,49 @@ void reset_handler(void)
 		flash_program_words(CONFIG_BANK_A, rec, RECORD_WORDS);
 		flash_erase_sector(CONFIG_SECTOR_B);
 		flash_program_words(CONFIG_BANK_B, rec, RECORD_WORDS);
+		wrote = 1;
 	}
 
 	/* Report the outcome on muco-boot's console UART (still up from the
 	 * bootloader session the operator used to upload us). */
-	USART1_CR1 |= USART_CR1_UE | USART_CR1_TE;   /* idempotent: ensure TX on */
+	USART1_CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;   /* ensure TX+RX on */
 	uart_puts("\r\n");
 	if (src) {
 		/* Surface an unhealthy pre-existing config: the banks are redundant
 		 * copies, so a mismatch (or one invalid bank) means they were already
-		 * inconsistent. We base on bank A (the bank the firmware trusts first)
-		 * and rewrite both, which also restores consistency. */
-		if (a_ok && b_ok && differ)
+		 * inconsistent. We based on bank A (the bank the firmware trusts first)
+		 * and rewrote both, which also restores consistency. */
+		if (wrote && a_ok && b_ok && differ)
 			uart_puts("backupcode: WARNING config banks A and B differed "
 				  "-- based on bank A\r\n");
-		else if (!a_ok || !b_ok)
+		else if (wrote && (!a_ok || !b_ok))
 			uart_puts("backupcode: one config bank was invalid "
 				  "-- healed from the other\r\n");
 		uart_puts("backupcode: backup code ");
 		uart_put_u16((uint16_t)(BACKUP_CODE));
-		uart_puts(" set in config flash (banks A+B)\r\n");
+		uart_puts(wrote ? " set in config flash (banks A+B)\r\n"
+				: " already set in config flash\r\n");
 	} else {
 		uart_puts("backupcode: no valid config record in either bank "
 			  "-- nothing written\r\n");
 	}
-	uart_puts("backupcode: done -- CPU halted. Press ESC to re-enter the "
-		  "bootloader, then re-upload the real mainware.\r\n");
+	uart_puts("backupcode: done. Press (or hold) ESC to reboot into the boot "
+		  "loader, then re-upload the real mainware.\r\n");
 
-	/* Halt (kicking the independent watchdog) rather than resetting: this
-	 * image still occupies the mainware slot, so a reset would just re-run
-	 * us. The operator re-enters the bootloader and re-uploads real mainware;
-	 * the code is already stored in config flash. */
-	for (;;)
+	/* This image occupies the mainware slot, so the boot loader can only be
+	 * reached by resetting -- muco-boot's ESC-to-shell runs right after reset,
+	 * not while we're running. Wait for the operator to press ESC, then
+	 * system-reset into muco-boot; holding ESC lets muco-boot catch it and stay
+	 * in its shell. Feed the watchdog meanwhile. */
+	for (;;) {
 		IWDG_KR = IWDG_RELOAD;
+		if ((USART1_SR & USART_SR_RXNE) && (uint8_t)USART1_DR == KEY_ESC) {
+			uart_puts("backupcode: resetting...\r\n");
+			uart_flush();
+			__asm__ volatile ("dsb" ::: "memory");
+			SCB_AIRCR = SCB_AIRCR_SYSRESET;
+		}
+	}
 }
 
 static void hang(void)
