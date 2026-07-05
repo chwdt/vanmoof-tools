@@ -24,7 +24,7 @@ static char *progname;
 static void
 usage(void)
 {
-        fprintf(stderr, "usage: %s <binfile>\n", progname);
+        fprintf(stderr, "usage: %s [-w] <binfile>\n", progname);
         exit(1);
 }
 
@@ -92,6 +92,33 @@ static uint32_t ware_crc(uint32_t crc, const vanmoof_ware_t *ware, const void *d
 	crc = crc32_calculate(crc, data + sizeof(tmp), length - sizeof(tmp));
 
 	return crc;
+}
+
+/*
+ * Finalise an application ware in place (the `-w` path): set the length field
+ * to the file size, then write ware_crc over the whole image (crc+length
+ * blanked) into the crc field. Reuses ware_crc/crc32_calculate above — the same
+ * MPEG-2 CRC the STM32 hardware unit and the OEM build compute — so a freshly
+ * built image (e.g. backupcode.bin) is accepted by the boot loader. Returns 0.
+ */
+static int stamp_ware(uint8_t *img, size_t size)
+{
+	vanmoof_ware_t ware;
+
+	if (size < sizeof(ware) || size % sizeof(uint32_t) != 0) {
+		fprintf(stderr, "%s: image size 0x%zx is not a word-aligned ware\n",
+			progname, size);
+		return 1;
+	}
+
+	memcpy(&ware, img, sizeof(ware));
+	ware.length = htole32((uint32_t)size);
+	ware.crc = htole32(ware_crc(initial_crc, &ware, img, size));
+	memcpy(img, &ware, sizeof(ware));
+
+	printf("%s: stamped ware crc 0x%08x length 0x%08zx\n",
+	       progname, le32toh(ware.crc), size);
+	return 0;
 }
 
 static int test_arm(uint8_t *data, size_t len)
@@ -539,12 +566,20 @@ int main(int argc, char** argv)
 	else
 		progname = argv[0];
 
-	if (argc < 2)
+	int do_write = 0;
+	int argi = 1;
+
+	if (argc > argi && strcmp(argv[argi], "-w") == 0) {
+		do_write = 1;                  /* stamp crc/length in place (ware images) */
+		argi++;
+	}
+
+	if (argc <= argi)
 		usage();
 
-	char *filename = argv[1];
+	char *filename = argv[argi];
 
-	int fd = open(filename, O_RDONLY);
+	int fd = open(filename, do_write ? O_RDWR : O_RDONLY);
 	if (fd < 0) {
 		fprintf(stderr, "%s: open(%s): %s\n", progname, filename, strerror(errno));
 		exit(1);
@@ -556,13 +591,26 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
-	void *data = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	void *data = mmap(NULL, st.st_size,
+			  do_write ? (PROT_READ | PROT_WRITE) : PROT_READ,
+			  MAP_SHARED, fd, 0);
 	if (data == (void *)-1) {
 		fprintf(stderr, "%s: mmap(%s): %s\n", progname, filename, strerror(errno));
 		exit(1);
 	}
 
 	close(fd);
+
+	if (do_write) {
+		if ((size_t)st.st_size >= sizeof(vanmoof_ware_t) &&
+		    le32toh(*(uint32_t *)data) == WARE_MAGIC) {
+			if (stamp_ware((uint8_t *)data, st.st_size) == 0)
+				msync(data, st.st_size, MS_SYNC);
+		} else {
+			fprintf(stderr, "%s: %s: no 0x%08x ware magic, not stamping\n",
+				progname, filename, WARE_MAGIC);
+		}
+	}
 
 	int rc = analyze(filename, (uint8_t *)data, st.st_size, 0, 0);
 

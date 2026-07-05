@@ -8,6 +8,9 @@ ARM_FLAGS = -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
 
 # backupcode: the three-digit handlebar unlock code to store (decimal 0..999).
 BACKUP_CODE ?= 123
+# post-build envelope crc/length stamper: reuse crc32's own ware_crc (crc32 -w).
+STAMP ?= ./crc32 -w
+
 all: pack unpack crc32 patch patch-dump ble-patch
 
 pack: pack.o
@@ -72,7 +75,7 @@ backupcode.o: backupcode.c
 backupcode.elf: backupcode.o backupcode.ld
 	arm-none-eabi-ld -T backupcode.ld -o $@ backupcode.o
 
-backupcode.bin: backupcode.elf
+backupcode.bin: backupcode.elf crc32
 	arm-none-eabi-objcopy -O binary $< $@
 	$(STAMP) $@
 
