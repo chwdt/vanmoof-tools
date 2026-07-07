@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#include <endian.h>
+#include "endian_compat.h"
 #include <zlib.h>
 
 #include <openssl/evp.h>

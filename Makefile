@@ -20,12 +20,12 @@ patch: patch.o
 patch-dump: patch-dump.o
 ble-patch: ble-patch.o
 
-pack.o: pack.c pack.h ware.h
-unpack.o: unpack.c pack.h ware.h
-crc32.o: crc32.c ware.h
-patch.o: patch.c ware.h
+pack.o: pack.c pack.h ware.h endian_compat.h
+unpack.o: unpack.c pack.h ware.h endian_compat.h
+crc32.o: crc32.c ware.h endian_compat.h
+patch.o: patch.c ware.h endian_compat.h
 
-ble-patch.o: ble-patch.c ware.h keys1.hex keys2.hex
+ble-patch.o: ble-patch.c ware.h endian_compat.h keys1.hex keys2.hex
 	$(eval SYSTEM_PUTCHAR1=$(shell nm keys1 | grep System_putchar | cut -d' ' -f1))
 	$(eval SYSTEM_PUTCHAR2=$(shell nm keys2 | grep System_putchar | cut -d' ' -f1))
 	$(CC) $(CFLAGS) -DSYSTEM_PUTCHAR1=0x$(SYSTEM_PUTCHAR1) -DSYSTEM_PUTCHAR2=0x$(SYSTEM_PUTCHAR2) -o $@ -c $<

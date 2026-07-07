@@ -6,7 +6,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include <endian.h>
+#include "endian_compat.h"
 
 #include <openssl/evp.h>
 #include <openssl/sha.h>    /* SHA256_DIGEST_LENGTH */

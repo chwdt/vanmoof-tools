@@ -6,7 +6,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include <endian.h>
+#include "endian_compat.h"
 
 #include "pack.h"
 #include "ware.h"
