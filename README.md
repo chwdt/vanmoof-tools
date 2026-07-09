@@ -79,14 +79,26 @@ and `motor_control` uses its own non-standard header; these are not VMFW images.
 
 ## Setup / Installation
 
-You can use a Raspberry Pi, your dusty old Linux Machine or fancy new Stuff like WSL and a Linux Machine (Ubuntu or Debian is fine).  
-Sadly macos does not seem to work.   
+You can use a Raspberry Pi, your dusty old Linux Machine (Ubuntu or Debian is fine), WSL (Windows Subsystem for Linux) and macOS.  
 
+
+### Linux
 ```
 apt update
 apt install build-essential gcc-arm-none-eabi binutils-arm-none-eabi libssl-dev
 make
 ```
+
+### macOS
+You need [Homebrew](https://brew.sh)
+
+```
+brew install openssl@3                 # host tools: pack, unpack, crc32, patch
+brew install --cask gcc-arm-embedded   # firmware targets: patch-dump, ble-patch, backupcode
+make
+```
+
+The ARM cross-compiler is only required for the firmware targets (`patch-dump`, `ble-patch`, `backupcode`).
 
 ## unpack
 

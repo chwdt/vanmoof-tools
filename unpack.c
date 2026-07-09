@@ -221,7 +221,7 @@ retry:
 			vanmoof_head_t head;
 			n = lseek(fd, 0, SEEK_SET);
 			if (n != 0) {
-				fprintf(stderr, "%s: seek(%u): %zd\n", progname, offset, n);
+				fprintf(stderr, "%s: seek(%zu): %zd\n", progname, offset, n);
 				exit(1);
 			}
 			n = read(fd, &head, sizeof(head));
@@ -232,7 +232,7 @@ retry:
 			pack_start = le32toh(head.offset);
 			n = lseek(fd, pack_start, SEEK_SET);
 			if (n != pack_start) {
-				fprintf(stderr, "%s: seek(%u): %zd\n", progname, offset, n);
+				fprintf(stderr, "%s: seek(%zu): %zd\n", progname, offset, n);
 				exit(1);
 			}
 			{
@@ -265,8 +265,8 @@ retry:
 	}
 
 	if (le32toh(header.offset) + le32toh(header.length) > st.st_size) {
-		fprintf(stderr, "%s: WARNING: PACK offset 0x%08zx + length 0x%08x is beyond end of file 0x%08zx\n",
-			progname, offset, le32toh(header.length), st.st_size);
+		fprintf(stderr, "%s: WARNING: PACK offset 0x%08zx + length 0x%08x is beyond end of file 0x%08llx\n",
+			progname, offset, le32toh(header.length), (unsigned long long)st.st_size);
 		exit(1);
 	}
 
@@ -274,7 +274,7 @@ retry:
 	for (i = 0; i < le32toh(header.length) / sizeof(entry); i++) {
 		n = lseek(fd, offset + pack_start, SEEK_SET);
 		if (n != offset + pack_start) {
-			fprintf(stderr, "%s: seek(%u): %zd\n", progname, offset + pack_start, n);
+			fprintf(stderr, "%s: seek(%zu): %zd\n", progname, offset + pack_start, n);
 			exit(1);
 		}
 
@@ -285,7 +285,7 @@ retry:
 		}
 
 		if (le32toh(entry.offset) + le32toh(entry.length) > le32toh(header.offset)) {
-			fprintf(stderr, "%s: file %s offset 0x%08zx + length 0x%08x is beyond start of PACK directoy 0x%08zx\n",
+			fprintf(stderr, "%s: file %s offset 0x%08x + length 0x%08x is beyond start of PACK directoy 0x%08x\n",
 				progname, entry.filename, le32toh(entry.offset), le32toh(entry.length), le32toh(header.offset));
 			exit(1);
 		}
@@ -306,7 +306,7 @@ retry:
 
 			n = lseek(fd, le32toh(entry.offset) + pack_start, SEEK_SET);
 			if (n != le32toh(entry.offset) + pack_start) {
-				fprintf(stderr, "%s: seek(%u): %zd\n", progname, le32toh(entry.offset) + pack_start, n);
+				fprintf(stderr, "%s: seek(%zu): %zd\n", progname, le32toh(entry.offset) + pack_start, n);
 				exit(1);
 			}
 

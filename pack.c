@@ -146,7 +146,7 @@ main(int argc, char **argv)
 
 	n = write(out, entries, le32toh(header.length));
 	if (n != le32toh(header.length)) {
-		fprintf(stderr, "%s: write(%zu): %zd\n", progname, le32toh(header.length), n);
+		fprintf(stderr, "%s: write(%u): %zd\n", progname, le32toh(header.length), n);
 		exit(1);
 	}
 
