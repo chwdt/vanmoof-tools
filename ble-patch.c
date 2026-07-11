@@ -285,15 +285,15 @@ static int verify_patch(const char *filename, const void *data, const patch_t *p
 	if (patch->expect) {
 		for (size_t i = 0; i < patch->size; i++) {
 			if (inst[i] != patch->expect[i]) {
-				fprintf(stderr, "%s: patch \"%s\": @0x%08x: inst[%zu] 0x%04x != expected 0x%04x\n",
-					filename, patch->name, patch->offset, i, inst[i], patch->expect[i]);
+				fprintf(stderr, "%s: patch \"%s\": @0x%08llx: inst[%zu] 0x%04x != expected 0x%04x\n",
+					filename, patch->name, (unsigned long long)patch->offset, i, inst[i], patch->expect[i]);
 				return -1;
 			}
 		}
 	}
 
 	if (verbose) {
-		printf("%s: verify \"%s\": @0x%08x [%u]: OK\n", progname, patch->name, patch->offset, patch->size);
+		printf("%s: verify \"%s\": @0x%08llx [%zu]: OK\n", progname, patch->name, (unsigned long long)patch->offset, patch->size);
 	}
 	return 0;
 }
@@ -329,7 +329,7 @@ static void apply_patch(void *data, const patch_t *patch, int verbose)
 	}
 
 	if (verbose) {
-		printf("%s: apply \"%s\": @0x%08x [%u]\n", progname, patch->name, patch->offset, patch->size);
+		printf("%s: apply \"%s\": @0x%08llx [%zu]\n", progname, patch->name, (unsigned long long)patch->offset, patch->size);
 	}
 }
 
@@ -441,8 +441,8 @@ int main(int argc, char** argv)
 
 		uint32_t length = le32toh(ble_ware.len);
 		if (length > st.st_size) {
-			printf("%s: BLE ware length 0x%08x extends beyond file size 0x%08zx\n",
-				filename, length, st.st_size);
+			printf("%s: BLE ware length 0x%08x extends beyond file size 0x%08llx\n",
+				filename, length, (unsigned long long)st.st_size);
 			exit(1);
 		}
 
