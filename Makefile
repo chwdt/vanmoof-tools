@@ -31,7 +31,7 @@ BACKUP_CODE ?= 123
 # post-build envelope crc/length stamper: reuse crc32's own ware_crc (crc32 -w).
 STAMP ?= ./crc32 -w
 
-all: pack unpack crc32 patch patch-dump ble-patch
+all: pack unpack crc32 patch patch-dump ble-patch ble-merge
 
 pack: pack.o
 unpack: unpack.o
@@ -39,11 +39,13 @@ crc32: crc32.o
 patch: patch.o
 patch-dump: patch-dump.o
 ble-patch: ble-patch.o
+ble-merge: ble-merge.o
 
 pack.o: pack.c pack.h ware.h endian_compat.h
 unpack.o: unpack.c pack.h ware.h endian_compat.h
 crc32.o: crc32.c ware.h endian_compat.h
 patch.o: patch.c ware.h endian_compat.h
+ble-merge.o: ble-merge.c
 
 ble-patch.o: ble-patch.c ware.h endian_compat.h keys1.hex keys2.hex
 	$(eval SYSTEM_PUTCHAR1=$(shell $(CROSS)nm keys1 | grep System_putchar | cut -d' ' -f1))
@@ -107,4 +109,4 @@ check-arm:
 .PHONY: all clean check-arm
 
 clean:
-	rm -f *.o unpack crc32 patch patch-dump backupcode.elf backupcode.bin
+	rm -f *.o unpack crc32 patch patch-dump ble-merge backupcode.elf backupcode.bin

@@ -428,6 +428,11 @@ dd if=vanmoof.bin of=bmsboot.bin bs=4096 skip=224 count=32
 00057f48: boot loader version: "14:10:12"
 
 00057fa8: CCFG (Customer configuration) Mirrored at CCFG 50004fa8
+00057fd8: CCFG::BL_CONFIG (ROM serial boot loader, 0xc5 in bits 31:24 enables it)
+00057fdc: CCFG::ERASE_CONF (chip erase / bank erase)
+00057fe0: CCFG::CCFG_TI_OPTIONS (TI failure analysis)
+00057fe4: CCFG::CCFG_TAP_DAP_0 (CPU DAP, PWRPROF TAP, TEST TAP)
+00057fe8: CCFG::CCFG_TAP_DAP_1 (PBIST2 TAP, PBIST1 TAP, AON TAP)
 00057fec: CCFG::IMAGE_VALID_CONF -> 56000 (boot loader entry)
 ```
 
