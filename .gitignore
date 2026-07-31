@@ -5,6 +5,7 @@ crc32
 patch
 patch-dump
 ble-patch
+ble-merge
 keys
 keys1
 keys2
