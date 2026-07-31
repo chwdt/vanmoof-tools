@@ -19,9 +19,31 @@ static char *progname;
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-v] <binfile>\n", progname);
+	fprintf(stderr, "usage: %s [-v] [-m] <binfile>\n", progname);
 	exit(1);
 }
+
+/* ---- experimental: move the BLE MAC address source to CCFG ----
+ *
+ * The CC2642R1F cannot change its primary BLE address: it is factory
+ * programmed read-only into FCFG1 at 0x500012e8. The chip does have a
+ * customer programmable *secondary* address in CCFG at 0x50004fd0
+ * (IEEE_BLE_0/1), and CCFG lives in the last flash page, so it can be
+ * written along with the boot loader image.
+ *
+ * Redirecting every literal reference from the FCFG1 register to the CCFG
+ * one makes a replacement BLE chip present the MAC address of the chip it
+ * replaces - the address the bike is registered under in the VanMoof
+ * backend, and the one the device name, the debug console password and the
+ * stored keys are derived from. This is the firmware half of that job; the
+ * matching MAC bytes have to be programmed into the CCFG field itself (see
+ * README, `ble-merge` writes that page).
+ *
+ * The references sit in ARM literal pools and are therefore word aligned,
+ * so only aligned words are examined - a coincidental match inside the
+ * signature block cannot corrupt the image. */
+#define FCFG1_MAC_BLE_0 0x500012e8
+#define CCFG_IEEE_BLE_0 0x50004fd0
 
 static const uint16_t exp_full_debug[] = {
 	0xf440,
@@ -346,6 +368,66 @@ static void apply_patches(void *data, const char *fake_version, const patchset_t
 	}
 }
 
+static int patch_mac_source(void *data, uint32_t start, uint32_t length, int verbose)
+{
+	uint32_t needle = htole32(FCFG1_MAC_BLE_0);
+	uint32_t replacement = htole32(CCFG_IEEE_BLE_0);
+	uint32_t offset;
+	int count = 0;
+
+	for (offset = (start + 3) & ~3u; offset + sizeof(needle) <= length; offset += 4) {
+		uint32_t word;
+
+		memcpy(&word, (uint8_t *)data + offset, sizeof(word));
+		if (word != needle)
+			continue;
+
+		memcpy((uint8_t *)data + offset, &replacement, sizeof(replacement));
+		count++;
+
+		if (verbose) {
+			printf("%s: apply \"mac source\": @0x%08x: 0x%08x -> 0x%08x\n",
+				progname, offset, FCFG1_MAC_BLE_0, CCFG_IEEE_BLE_0);
+		}
+	}
+
+	return count;
+}
+
+static void apply_mac_source(void *data, const ble_ware_t *ble_ware, const char *filename, int verbose)
+{
+	uint32_t start = le32toh(ble_ware->prg_entry);
+	uint32_t length = le32toh(ble_ware->len);
+	int count;
+
+	printf("%s: EXPERIMENTAL: taking the BLE MAC address from CCFG instead of FCFG1\n", progname);
+
+	count = patch_mac_source(data, start, length, verbose);
+
+	printf("%s: mac source: %d reference(s) 0x%08x -> 0x%08x in [0x%08x..0x%08x)\n",
+		filename, count, FCFG1_MAC_BLE_0, CCFG_IEEE_BLE_0, start, length);
+
+	if (count == 0) {
+		fprintf(stderr, "%s: mac source: no reference to the FCFG1 MAC register found, "
+			"nothing patched\n", progname);
+		exit(1);
+	}
+
+	printf("%s: mac source: program the wanted address into CCFG IEEE_BLE_0/1 at flash\n", progname);
+	printf("%s:             0x00057fd0 (six bytes, low byte first, then ff ff) or the\n", progname);
+	printf("%s:             radio comes up as ff:ff:ff:ff:ff:ff\n", progname);
+}
+
+static void restamp_crc(ble_ware_t *ble_ware, void *data, const char *filename)
+{
+	uint32_t length = le32toh(ble_ware->len);
+
+	ble_ware->crc = htole32(crc32(0, (uint8_t *)data + 12, length - 12));
+	memcpy(data, ble_ware, sizeof(ble_ware_t));
+
+	printf("%s: CRC 0x%08x\n", filename, le32toh(ble_ware->crc));
+}
+
 static void fixup_headers(ble_ware_t *ble_ware, void *data, size_t size, size_t add_len, const char *filename)
 {
 	ble_ware_seg_t seg;
@@ -382,6 +464,7 @@ static void fixup_headers(ble_ware_t *ble_ware, void *data, size_t size, size_t 
 int main(int argc, char** argv)
 {
 	int verbose = 0;
+	int mac_source = 0;
 	int opt;
 
 	progname = strrchr(argv[0], '/');
@@ -390,10 +473,13 @@ int main(int argc, char** argv)
 	else
 		progname = argv[0];
 
-	while ((opt = getopt(argc, argv, "v")) != -1) {
+	while ((opt = getopt(argc, argv, "vm")) != -1) {
 		switch (opt) {
 			case 'v':
 				verbose++;
+				break;
+			case 'm':
+				mac_source++;
 				break;
 			default:
 				usage();
@@ -456,30 +542,42 @@ int main(int argc, char** argv)
 		printf("%s: BLE ware entry 0x%08x\n", filename, le32toh(ble_ware.prg_entry));
 		printf("%s: BLE ware hdr len 0x%08x\n", filename, le32toh(ble_ware.hdr_len));
 
+		const patchset_t *set = NULL;
+
  		if ((le32toh(ble_ware.crc) == 0xb79c4373) && (length == 0x0002c67c)) {
-                	if (verify_expected(filename, data, NULL, &patchset_1_4_1, verbose)) {
-				if (add_len) {
-					ftruncate(fd, st.st_size + add_len);
-				}
-                        	apply_patches(data, NULL, &patchset_1_4_1, verbose);
-
-				fixup_headers(&ble_ware, data, st.st_size, add_len, filename);
-			} else {
-				fprintf(stderr, "%s: verify patchset failed\n", progname);
-				exit(1);
-			}
+			set = &patchset_1_4_1;
  		} else if ((le32toh(ble_ware.crc) == 0x884a9283) && (length == 0x0003531c)) {
-                	if (verify_expected(filename, data, NULL, &patchset_2_4_1, verbose)) {
-				if (add_len) {
-					ftruncate(fd, st.st_size + add_len);
-				}
-                        	apply_patches(data, NULL, &patchset_2_4_1, verbose);
+			set = &patchset_2_4_1;
+		}
 
-				fixup_headers(&ble_ware, data, st.st_size, add_len, filename);
-			} else {
+		if (set) {
+			if (!verify_expected(filename, data, NULL, set, verbose)) {
 				fprintf(stderr, "%s: verify patchset failed\n", progname);
 				exit(1);
 			}
+
+			/* Before the dump patchset, so the one CRC pass at the
+			 * end of fixup_headers covers both. */
+			if (mac_source) {
+				apply_mac_source(data, &ble_ware, filename, verbose);
+			}
+
+			if (add_len) {
+				ftruncate(fd, st.st_size + add_len);
+			}
+			apply_patches(data, NULL, set, verbose);
+
+			fixup_headers(&ble_ware, data, st.st_size, add_len, filename);
+		} else if (mac_source) {
+			/* The MAC source patch keys off a register literal, not
+			 * off hardcoded offsets, so it applies to any version -
+			 * the file just does not get the dump patchset. */
+			printf("%s: No patchset for this version of bleware.bin, "
+				"applying the mac source patch only\n", progname);
+
+			apply_mac_source(data, &ble_ware, filename, verbose);
+
+			restamp_crc(&ble_ware, data, filename);
 		} else {
 			fprintf(stderr, "%s: No patchset for this version of bleware.bin\n", progname);
 			exit(1);
