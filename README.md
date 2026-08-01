@@ -52,7 +52,7 @@ Cortex-M vector table. The header items are:
 - 12 bytes date in ASCII (`__DATE__`, e.g. "Jan 29 2024")
 - 12 bytes time in ASCII (`__TIME__`, e.g. "14:50:32", 9 bytes used)
 
-All 4 byte values are encoded little endian. The length is authoritative — it is
+All 4 byte values are encoded little endian. The length is authoritative - it is
 the size of the image that is CRC'd and flashed; for the shipped device files it
 equals the exact file size. `crc32` enforces it: a length that runs past the file
 is treated as a truncated/corrupt image and fails, while any bytes past `length`
@@ -63,7 +63,7 @@ variant is `1` dev, `2` rc, `3` main, `0` untagged (e.g. `0x01056000` reads as
 `1.5.0 main`).
 
 Unlike the S3/X3 images, the CRC here is the **standard CRC-32** (zlib /
-Ethernet poly 0x04c11db7, reflected, init and final-xor 0xffffffff — what
+Ethernet poly 0x04c11db7, reflected, init and final-xor 0xffffffff - what
 `crc32(3)` from zlib computes), again over the image (its `length` bytes) with
 the header CRC and length fields both set to 0xffffffff.
 
@@ -128,7 +128,7 @@ usage: `crc32 [-w] <warefile>`
 
 This tool calculates and verifies the CRC of both boot loader and firmware images. It auto-detects the container and recurses into wrappers: S3/X3 `vanmoof_ware_t` images (magic 0xaa55aa55), the `HEAD` signature wrapper (TLV trailer with SHA256/KEYHASH/ECDSA_SIG), `PACK` bundles (each contained ware is listed and CRC-checked individually; a bundled `animations.pak` is summarised rather than descended into), BLE OAD images, plain ARM bootloaders, and the S5/A5 and S6 `VMFW` images described above. A signed S6/S3 update `.pak` is a `HEAD`-wrapped `PACK`, so running `crc32` on it verifies the wrapper signature and then every firmware inside. Formats it cannot verify (e.g. the raw battery payload or the nRF `.cbor` modem image) are reported as "cannot verify" rather than failing.
 
-With `-w` the tool **finalises** an application ware (magic `0xaa55aa55`) in place instead of only checking it: it sets the length field to the file size and writes the correct CRC-32 — computed with the same `ware_crc` it verifies with — into the header, then re-verifies. This is the post-build stamp step for self-built images: a ware's `Makefile` runs `crc32 -w` on the `objcopy` output so the boot loader accepts it (e.g. `backupcode` uses it as its `STAMP`). Inputs without the ware magic are left untouched.
+With `-w` the tool **finalises** an application ware (magic `0xaa55aa55`) in place instead of only checking it: it sets the length field to the file size and writes the correct CRC-32, computed with the same `ware_crc` it verifies with, into the header, then re-verifies. This is the post-build stamp step for self-built images: a ware's `Makefile` runs `crc32 -w` on the `objcopy` output so the boot loader accepts it (e.g. `backupcode` uses it as its `STAMP`). Inputs without the ware magic are left untouched.
 
 ## patch
 
@@ -209,6 +209,62 @@ JTAGCFG:         0x00000003
 
 The boot loader is not touched again once these CCFG values are present.
 
+### Options:
+
+- `-v`: Be verbose, list every patch as it is verified and applied.
+- `-m`: **Experimental.** Take the BLE MAC address from CCFG instead of FCFG1, see below.
+
+### Experimental: moving the MAC address to CCFG (`-m`)
+
+When a BLE chip is replaced, the bike stops matching the MAC address stored for
+it in the VanMoof backend. The CC2642R1F cannot change its primary address,
+it is factory programmed read-only into FCFG1 at `0x500012e8`, but it does have
+a customer programmable **secondary** address in CCFG at `0x50004fd0`
+(`IEEE_BLE_0`/`IEEE_BLE_1`), and CCFG lives in the last flash page, so it can be
+written together with the boot loader.
+
+`-m` rewrites every literal reference to the FCFG1 register into a reference to
+the CCFG one, so the replacement chip reports the address of the chip it
+replaces. In bleware 2.4.01 there are eight such references; the firmware
+already carries one reference to the CCFG register (next to the FCFG1 one, in
+what looks like TI's own primary/secondary address selection), which is left
+alone. The OAD CRC-32 is recomputed afterwards, so the boot loader accepts the
+result - `bleboot` verifies a CRC-32 and never a signature, on either its
+quick-scan or its full-scan path, so the stale ECDSA signature in the image
+header does not need renewing for a JTAG-flashed image.
+
+Because the patch keys off a register literal rather than hardcoded offsets, it
+works on any bleware version. If the file is not one of the two versions the
+dump patchset knows, `-m` applies the MAC patch alone and leaves everything else
+untouched:
+
+```
+$ ble-patch -m bleware_2.4.01.bin
+ble-patch: EXPERIMENTAL: taking the BLE MAC address from CCFG instead of FCFG1
+bleware_2.4.01.bin: mac source: 8 reference(s) 0x500012e8 -> 0x50004fd0 in [0x00000090..0x00035b2c)
+```
+
+Note that on a version the dump patchset does know, `-m` is applied **in
+addition** to it - the file gets the debug console patch as well, which is
+`ble-patch`'s normal job.
+
+**This is only half the job.** The address itself still has to be programmed
+into the CCFG field, or the radio comes up as `ff:ff:ff:ff:ff:ff`. 
+
+#### Option 1
+
+```
+cp bleboot_1.0.1.bin bleboot_f88a5e4f1337.bin
+MAC=f8:8a:5e:4f:13:37
+printf "$(echo $MAC | awk -F: '{for (i=6;i>=1;i--) printf "\\x%s", $i}')\xff\xff" |
+    dd of=bleboot_f88a5e4f1337.bin bs=1 seek=$((0x1fd0)) conv=notrunc
+```
+
+use ble-merge afterwards with the patched bootloader and flash the file onto the Chip.  
+
+#### Option 2
+
+Flash the Image but afterwards change the secondary mac manually in SmartFR Flash Programmer 2.  
 ## patch-dump
 
 This tool patches a modern VanMoof mainware as `patch` above, but adds a function to dump FLASH or memory to the console. This function is patched into the `help` command and will output FLASH or memory as hexdump.  Use as `help <addr> <count>`.

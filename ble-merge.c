@@ -1,19 +1,19 @@
 /*
- * ble-merge — build one flashable CC2642R1F image out of a bleware +
+ * ble-merge - build one flashable CC2642R1F image out of a bleware +
  * bleboot pair, with the CCFG debug lock removed.
  *
  * The VanMoof S3/X3 BLE module (TI CC2642R1F, 352 KB internal flash)
  * keeps its two images in two separate places:
  *
- *   0x00000000  bleware — TI "OAD NVM1" application image: OAD header
+ *   0x00000000  bleware - TI "OAD NVM1" application image: OAD header
  *                         at offset 0, vector table at prgEntry (0x90)
- *   0x00056000  bleboot — the BIM (TI Boot Image Manager), the last
+ *   0x00056000  bleboot - the BIM (TI Boot Image Manager), the last
  *                         8 KB page; the 88-byte CCFG sits at its end
  *                         at 0x00057FA8
  *
  * A programmer talking to a mass-erased chip (SmartRF Flash Programmer
  * 2, UniFlash, OpenOCD) wants a single image, so this tool lays both
- * out in one 352 KB flat image — 0xFF everywhere else — and writes it
+ * out in one 352 KB flat image - 0xFF everywhere else - and writes it
  * as raw binary or Intel HEX.
  *
  * While doing that it clears the OEM debug lock in the CCFG. VanMoof
@@ -23,7 +23,7 @@
  * XDS110 gets no further than the ICEPick router ("A router subpath
  * could not be accessed. A security error has probably occurred.").
  * Flashing that CCFG back would lock the part again the moment it
- * boots, so ble-merge writes the unlocked values instead — the very
+ * boots, so ble-merge writes the unlocked values instead - the very
  * same ones ble-patch's `dump ccfg` command writes at runtime
  * (0xFFFFFFC5 / 0xFFC5C5C5 / 0xFFC5C5C5), so a patched bleware
  * recognises its own marker and leaves the boot loader page alone.
@@ -66,7 +66,7 @@
 /* A TAP-enable field is on only for this exact value. */
 #define TAP_ENABLE		0xc5u
 
-/* Unlocked CCFG words — identical to what keys.c writes at runtime. */
+/* Unlocked CCFG words - identical to what keys.c writes at runtime. */
 #define TI_OPTIONS_OPEN		0xffffffc5u
 #define TAP_DAP_OPEN		0xffc5c5c5u
 
@@ -343,7 +343,7 @@ main(int argc, char **argv)
 		boot = tmp;
 		boot_len = tmp_len;
 		boot_path = tmp_path;
-		printf("note    : arguments swapped — %s is the bleware\n", ware_path);
+		printf("note    : arguments swapped - %s is the bleware\n", ware_path);
 	}
 
 	if (!is_oad_image(ware, ware_len)) {
@@ -369,7 +369,7 @@ main(int argc, char **argv)
 
 	if (img_len < OAD_HDR_LEN || img_len > ware_len) {
 		fprintf(stderr, "%s: %s: header length 0x%x does not fit the file "
-			"(0x%zx) — truncated or corrupt image\n",
+			"(0x%zx) - truncated or corrupt image\n",
 			progname, ware_path, img_len, ware_len);
 		exit(1);
 	}
@@ -386,7 +386,7 @@ main(int argc, char **argv)
 		warnings++;
 	}
 	if (load_addr != BLEWARE_BASE) {
-		fprintf(stderr, "%s: %s: image segment loads at 0x%08x, not 0x%05x — "
+		fprintf(stderr, "%s: %s: image segment loads at 0x%08x, not 0x%05x - "
 			"this is not a bleware slot image\n",
 			progname, ware_path, load_addr, BLEWARE_BASE);
 		exit(1);
@@ -404,7 +404,7 @@ main(int argc, char **argv)
 		BLEWARE_BASE, BLEWARE_BASE + img_len - 1, entry);
 
 	if (img_crc != calc_crc) {
-		printf("warning : computed crc32 is 0x%08x — the image body does not "
+		printf("warning : computed crc32 is 0x%08x - the image body does not "
 			"match its header\n", calc_crc);
 		printf("          (the BIM's quick scan does not re-check the crc, so it "
 			"still boots, but\n");
@@ -419,7 +419,7 @@ main(int argc, char **argv)
 			"0x%08x\n", end_addr, img_len - 1);
 
 	/* The BIM's quick scan launches the first internal-flash slot whose
-	 * header passes these four tests — this is the path that boots a
+	 * header passes these four tests - this is the path that boots a
 	 * freshly programmed chip, before any external flash is involved. */
 	launches = ware[OAD_OFF_BIMVER] == 3 && ware[OAD_OFF_METAVER] == 1 &&
 		(ware[OAD_OFF_IMGTYPE] == 1 || ware[OAD_OFF_IMGTYPE] == 3 ||
@@ -531,7 +531,7 @@ main(int argc, char **argv)
 	/* ---- output ---- */
 
 	if (out_path == NULL) {
-		printf("output  : none — pass an output file to write the merged image\n");
+		printf("output  : none - pass an output file to write the merged image\n");
 		if (warnings)
 			printf("done    : %d warning(s)\n", warnings);
 		return 0;

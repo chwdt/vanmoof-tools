@@ -98,8 +98,8 @@ static uint32_t ware_crc(uint32_t crc, const vanmoof_ware_t *ware, const void *d
 /*
  * Finalise an application ware in place (the `-w` path): set the length field
  * to the file size, then write ware_crc over the whole image (crc+length
- * blanked) into the crc field. Reuses ware_crc/crc32_calculate above — the same
- * MPEG-2 CRC the STM32 hardware unit and the OEM build compute — so a freshly
+ * blanked) into the crc field. Reuses ware_crc/crc32_calculate above - the same
+ * MPEG-2 CRC the STM32 hardware unit and the OEM build compute - so a freshly
  * built image (e.g. backupcode.bin) is accepted by the boot loader. Returns 0.
  */
 static int stamp_ware(uint8_t *img, size_t size)
@@ -323,7 +323,7 @@ static int analyze(const char *prefix, uint8_t *img, size_t size, int depth, int
 		}
 
 		/* The wrapped payload is itself an image (a single ware, or a
-		 * PACK bundle of them) — recurse on it. */
+		 * PACK bundle of them) - recurse on it. */
 		return analyze(prefix, img + pack_start, pack_len, depth + 1, nested);
 	} else if (size >= sizeof(pack_header_t) &&
 		   memcmp(img, PACK_MAGIC, sizeof(((pack_header_t *)0)->magic)) == 0) {
@@ -461,12 +461,12 @@ static int analyze(const char *prefix, uint8_t *img, size_t size, int depth, int
 
 		/* A bootloader is also a pure ARM image; report its version+CRC
 		 * trailer when present (older bootloaders, e.g. BL V004, leave it
-		 * blank and the CRC won't validate — then it's just a plain ARM
+		 * blank and the CRC won't validate - then it's just a plain ARM
 		 * binary and we say nothing further). */
 		/* bmsboot prints its version + build date in a banner string
 		 * ("… VanMoof BL V<ver> <date>"). The version+CRC trailer at the
 		 * image tail only carries the 3-digit version (no date), and older
-		 * builds (e.g. V004) leave it blank — so read the banner for the
+		 * builds (e.g. V004) leave it blank - so read the banner for the
 		 * version/date and use the trailer only for the self-CRC check. */
 		{
 			const char *needle = "VanMoof BL V";
@@ -497,7 +497,7 @@ static int analyze(const char *prefix, uint8_t *img, size_t size, int depth, int
 		/* mainboot (muco-boot) carries a vanmoof_ware_t in the LAST 0x28
 		 * bytes instead of at the start: magic, version (major.minor in
 		 * version[3]/[2]), then date/time. Its crc/length are left unset
-		 * (0xffffffff) — the loader is not self-CRC'd; it CRC-checks the
+		 * (0xffffffff) - the loader is not self-CRC'd; it CRC-checks the
 		 * application images instead. */
 		if (size >= sizeof(vanmoof_ware_t)) {
 			vanmoof_ware_t foot;
