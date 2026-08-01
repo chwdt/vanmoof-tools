@@ -265,6 +265,92 @@ use ble-merge afterwards with the patched bootloader and flash the file onto the
 #### Option 2
 
 Flash the Image but afterwards change the secondary mac manually in SmartFR Flash Programmer 2.  
+
+
+## ble-merge
+
+usage: `ble-merge [-k] [-v] [-x] <blewarefile> <blebootfile> [<outfile>]`
+
+The BLE MCU keeps its two images in two places, `bleware` at `0x00000000` and
+`bleboot` (the TI BIM) in the last 8 KB flash page at `0x00056000`, so there is
+no single file to hand to a flash programmer. This tool merges the pair into one
+352 KB image covering the whole CC2642R1F flash (`0xff` in the gap between them)
+and removes the debug lock from the CCFG on the way. That is what you need to
+bring a chip back to life after a forced mass erase, using SmartRF Flash
+Programmer 2, UniFlash or any other XDS110 host.
+
+Both images are copied byte for byte. The only bytes that change are three CCFG
+words in the last page:
+
+| Address | Field | VanMoof | ble-merge |
+| :-- | :-- | :-- | :-- |
+| 0x57fe0 | `CCFG_TI_OPTIONS` | 0xffffff00 | 0xffffffc5 |
+| 0x57fe4 | `CCFG_TAP_DAP_0` | 0xff000000 | 0xffc5c5c5 |
+| 0x57fe8 | `CCFG_TAP_DAP_1` | 0xff000000 | 0xffc5c5c5 |
+
+These are the same values the `dump ccfg` command of `ble-patch` writes at
+runtime, so a patched bleware recognises its own marker and never rewrites the
+boot loader page.
+
+A TAP is enabled only by the exact value `0xc5`. VanMoof ships `0x00` in every
+TAP field, which turns off the CPU DAP (and with it JTAG/cJTAG debugging), the
+power profiler and test TAPs, the PBIST and AON TAPs, and TI's failure-analysis
+unlock. `CCFG_BL_CONFIG` is `0x00ffffff`, so `BOOTLOADER_ENABLE` is `0x00` and
+the ROM serial boot loader is disabled as well - there is no serial backdoor
+either. An XDS110 still sees the ICEPick router on a locked chip, but the CPU TAP
+never comes up and CCS/UniFlash stops at:
+
+```
+IcePick_C: Error connecting to the target: (Error -241 @ 0x0) A router subpath
+could not be accessed. A security error has probably occurred.
+```
+
+`CCFG_ERASE_CONF` stays `0xffffffff`, so chip erase and bank erase remain
+enabled. That is why a forced mass erase still gets through on a locked chip,
+and it is the only way back in. Programming the factory CCFG unchanged locks the
+chip again on the first boot; that is what `-k` does, and the tool warns when it
+is about to hand you such an image.
+
+### Options
+
+- `-k`: Keep the CCFG exactly as it is in `<blebootfile>`, i.e. reproduce the
+  factory flash including the debug lock.
+- `-v`: Also print all 22 CCFG fields by name.
+- `-x`: Write Intel HEX instead of a raw binary (implied by a `.hex` output file
+  name). The HEX covers only the two occupied ranges, so the erased gap between
+  them is not programmed.
+
+Both input files are recognised by content, so their order on the command line
+does not matter. `<blebootfile>` may also be a full 352 KB flash dump, in which
+case its last page is used. With no `<outfile>` nothing is written and the tool
+only reports what it found - a quick way to check whether some `bleboot` image
+locks the debug port.
+
+### Flashing it
+
+The raw binary carries no addresses and is meant to be programmed from
+`0x00000000`, which is where SmartRF Flash Programmer 2 puts a `.bin` by default.
+In its *Program* page pick the merged file, *Program*: "Entire source file", *Verify*: "Readback".
+
+The CCFG is part of the image, so the programmer writes the unlocked values with
+everything else; there is no separate CCFG step and no need to keep the old page.
+
+### Caveats
+
+- The BIM boots the freshly programmed image through its *quick scan*, which
+  only checks the OAD header fields (`bimVer` 3, `metaVer` 1, image type 1/3/7,
+  crc status other than `0xfc`) and then jumps to `prgEntry`. It does **not**
+  re-verify the CRC32 on that path, so a self-built bleware boots even if its
+  CRC is stale. `ble-merge` reports the CRC anyway, because an OTA update of
+  the same image would be rejected.
+- Before the quick scan the BIM runs a full scan over the **external** SPI NOR
+  flash. A staged OAD image that is still marked pending there is promoted into
+  internal flash and launched, overwriting what you just programmed. If the
+  module comes back with a locked chip that might be the reason.
+- `bleboot` verifies a CRC32, not a signature, so nothing here needs re-signing.
+- Neither the bleware nor the boot loader code is modified; if you want the
+  factory-identical flash, use `-k`.
+
 ## patch-dump
 
 This tool patches a modern VanMoof mainware as `patch` above, but adds a function to dump FLASH or memory to the console. This function is patched into the `help` command and will output FLASH or memory as hexdump.  Use as `help <addr> <count>`.
